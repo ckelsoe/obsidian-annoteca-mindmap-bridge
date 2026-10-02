@@ -1,0 +1,25 @@
+/* Settings footer */
+.annoteca-mindmap-bridge-settings-footer {
+	justify-content: center;
+	text-align: center;
+	opacity: 0.8;
+}
+
+.annoteca-mindmap-bridge-footer-inner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: var(--size-4-2);
+}
+
+.annoteca-mindmap-bridge-footer-link {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	white-space: nowrap;
+}
+
+.annoteca-mindmap-bridge-footer-separator {
+	color: var(--text-faint);
+}
