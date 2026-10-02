@@ -202,6 +202,24 @@ describe('MapDecorator', () => {
 		expect(badgeOf(map.nodeEl(1))).toBeNull();
 	});
 
+	it('loads the note once the map is given one after it was created', async () => {
+		// Mind map editor can set a new leaf's note after the leaf exists, so
+		// the first refresh sees no note at all.
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		map.showNote('');
+		const h = harness(map.leaf, () => [clarify]);
+		await h.decorator.refresh();
+		expect(h.queries).toHaveLength(0);
+
+		map.showNote('notes/plan.md');
+		map.redraw(NODES);
+		await nextFrame();
+		await settle();
+
+		expect(h.queries).toHaveLength(1);
+		expect(badgeOf(map.nodeEl(1))).not.toBeNull();
+	});
+
 	it('draws nothing and asks nothing while Annoteca is unavailable', async () => {
 		const map = drawMap(document.body, 'notes/plan.md', NODES);
 		const h = harness(map.leaf, () => [clarify]);
@@ -210,6 +228,36 @@ describe('MapDecorator', () => {
 		await h.decorator.refresh();
 		expect(badgeOf(map.nodeEl(1))).toBeNull();
 		expect(h.queries).toHaveLength(1);
+	});
+
+	it('does not keep retrying while Annoteca is unavailable', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		let asked = 0;
+		const errors = jest
+			.spyOn(console, 'error')
+			.mockImplementation(() => undefined);
+		const decorator = new MapDecorator(map.leaf, {
+			adapter: mindmapEditorAdapter,
+			annoteca: () => {
+				asked += 1;
+				return { kind: 'missing' };
+			},
+			savedText: () => Promise.resolve(NOTE),
+			liveText: () => Promise.resolve(NOTE),
+			reportLayout: () => undefined,
+			storageNoticeDismissed: () => false,
+			dismissStorageNotice: () => undefined,
+			convertStorage: () => undefined,
+		});
+		await decorator.refresh();
+		map.redraw(NODES);
+		await nextFrame();
+		await settle();
+
+		// One refresh, nothing more: each redraw would otherwise ask again.
+		expect(asked).toBe(1);
+		expect(errors).not.toHaveBeenCalled();
+		errors.mockRestore();
 	});
 
 	it('keeps the newest result when an older read finishes last', async () => {

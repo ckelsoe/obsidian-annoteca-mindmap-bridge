@@ -44,6 +44,11 @@ export class MapDecorator {
 	private observed: HTMLElement | null = null;
 	private frame: { win: Window; id: number } | null = null;
 	private loadSeq = 0;
+	// The note the last refresh set out to load, loaded or not. A redraw
+	// showing a different note starts a refresh; one showing this note does
+	// not, so an Annoteca that cannot answer is not asked again on every
+	// redraw.
+	private requested: string | null = null;
 	private disposed = false;
 	private readonly actions: NodeActions;
 	private readonly controls: NodeControlActions;
@@ -73,6 +78,7 @@ export class MapDecorator {
 		if (this.disposed) return;
 		const seq = ++this.loadSeq;
 		const path = this.deps.adapter.notePath(this.leaf);
+		this.requested = path;
 		const status = this.deps.annoteca();
 		if (!path || status.kind !== 'ready') {
 			this.loaded = null;
@@ -140,9 +146,9 @@ export class MapDecorator {
 		const path = this.deps.adapter.notePath(this.leaf);
 		if (!loaded || loaded.path !== path) {
 			clearNodeControls(canvas);
-			// The map moved to another note without anything else telling the
-			// bridge; load that note's comments.
-			if (loaded && path) void this.refresh();
+			// The map shows a note nothing has loaded yet: it switched notes, or
+			// it was given its note after it was created.
+			if (path && path !== this.requested) void this.refresh();
 			return;
 		}
 		drawNodeControls(

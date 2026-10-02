@@ -114,3 +114,19 @@
 	flex-wrap: wrap;
 	gap: var(--size-4-2);
 }
+
+/* On a phone the view header is fixed over the top of the leaf, and the view
+   content clears it with a top margin. The notice takes that margin instead,
+   and the content below it drops its own while the notice is there, so the
+   notice sits below the header and the gap is not doubled. */
+.is-phone .mod-root .workspace-leaf-content .annoteca-mmb-storage-notice {
+	margin-top: var(--view-top-spacing);
+}
+
+.is-phone
+	.mod-root
+	.workspace-leaf-content
+	.annoteca-mmb-storage-notice
+	+ .view-content {
+	margin-top: 0;
+}
