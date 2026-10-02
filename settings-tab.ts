@@ -1,5 +1,6 @@
 import { PluginSettingTab } from 'obsidian';
 import type { App, Plugin, Setting, SettingDefinitionItem } from 'obsidian';
+import type { BridgeService } from './bridge-service';
 
 // Community discussion for this plugin. This must stay a never-expiring
 // discord.gg invite: a discord.com/channels/... deep link only resolves for
@@ -13,12 +14,33 @@ export class BridgeSettingTab extends PluginSettingTab {
 	constructor(
 		app: App,
 		private readonly plugin: Plugin,
+		private readonly bridge: BridgeService,
 	) {
 		super(app, plugin);
 	}
 
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
+			{
+				type: 'group',
+				heading: 'Status',
+				items: [
+					{
+						name: 'Annoteca',
+						searchable: false,
+						render: (setting: Setting) => {
+							setting.setDesc(this.annotecaStatus());
+						},
+					},
+					{
+						name: this.bridge.mapPluginName(),
+						searchable: false,
+						render: (setting: Setting) => {
+							setting.setDesc(this.mapStatus());
+						},
+					},
+				],
+			},
 			{
 				name: 'About',
 				searchable: false,
@@ -27,6 +49,28 @@ export class BridgeSettingTab extends PluginSettingTab {
 				},
 			},
 		];
+	}
+
+	private annotecaStatus(): string {
+		const status = this.bridge.annoteca();
+		if (status.kind === 'missing')
+			return 'Not found. Install and enable Annoteca to see comments on mind maps.';
+		if (status.kind === 'outdated')
+			return 'Too old. Update Annoteca to 1.20.0 or later.';
+		return `Connected (API version ${status.api.apiVersion}).`;
+	}
+
+	private mapStatus(): string {
+		const name = this.bridge.mapPluginName();
+		if (!this.bridge.mapPluginLoaded())
+			return `Not found. Install and enable ${name} to draw mind maps.`;
+		const problem = this.bridge.layoutStatus();
+		if (problem)
+			return `${name}'s layout has changed (${problem}). Badges are off until this plugin is updated.`;
+		const maps = this.bridge.mapCount();
+		return maps === 1
+			? 'Connected, 1 map open.'
+			: `Connected, ${maps} maps open.`;
 	}
 
 	private renderFooter(setting: Setting): void {

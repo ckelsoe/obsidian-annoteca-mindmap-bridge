@@ -26,6 +26,9 @@ declare global {
 			o?: DomElementInfo | string,
 			callback?: (el: HTMLSpanElement) => void,
 		): HTMLSpanElement;
+		// Each window has its own constructor. A pop-out's canvas is observed
+		// with the pop-out's own, reached through the node's `win`.
+		MutationObserver: typeof MutationObserver;
 	}
 }
 

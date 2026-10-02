@@ -23,3 +23,30 @@
 .annoteca-mindmap-bridge-footer-separator {
 	color: var(--text-faint);
 }
+
+/* Comment badge on a map node. Absolutely positioned so it never changes the
+   node's measured size. Bottom-right, because the map plugin's own marks sit
+   on the node's top corners. The colour comes from Annoteca's
+   `annoteca-cat-<id>` class, so it follows the user's category colours. */
+.annoteca-mmb-badge {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	transform: translate(40%, 40%);
+	min-width: 1.5em;
+	height: 1.5em;
+	padding: 0 0.35em;
+	border: 1.5px solid currentColor;
+	border-radius: 0.75em;
+	background: var(--background-primary);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	line-height: calc(1.5em - 3px);
+	text-align: center;
+	pointer-events: auto;
+	z-index: 2;
+}
+
+.annoteca-mmb-badge.is-resolved {
+	opacity: 0.45;
+}
