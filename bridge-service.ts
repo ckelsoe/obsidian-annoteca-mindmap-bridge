@@ -10,7 +10,7 @@ import type { MapAdapter } from './adapters/map-adapter';
 import { annotecaStatus } from './annoteca';
 import type { AnnotecaStatus } from './annoteca';
 import { MapDecorator } from './map-decorator';
-import { savedText } from './note-text';
+import { liveText, savedText } from './note-text';
 
 // Long enough to fold a burst of index changes (a save touches several notes'
 // entries) into one reload, short enough to feel live.
@@ -118,6 +118,7 @@ export class BridgeService {
 				adapter: this.adapter,
 				annoteca: () => this.annoteca(),
 				savedText: (path) => savedText(this.app, path),
+				liveText: (path) => liveText(this.app, path),
 				reportLayout: (problem) => this.reportLayout(problem),
 			});
 			this.decorators.set(leaf, decorator);

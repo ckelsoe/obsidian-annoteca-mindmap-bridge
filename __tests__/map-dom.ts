@@ -19,9 +19,26 @@ export interface MapFixture {
 	nodeEl(line: number): HTMLElement;
 	// Show another note, as the map does when it follows the active file.
 	showNote(path: string): void;
+	// Events that reached a node's own listeners (select, edit, drag, menu),
+	// as "<line>:<type>".
+	nodeEvents: string[];
 }
 
-function drawNodes(canvas: HTMLElement, nodes: readonly NodeSpec[]): void {
+// The events Mind map editor listens for on each node element.
+const NODE_EVENTS = [
+	'click',
+	'dblclick',
+	'contextmenu',
+	'pointerdown',
+	'mousedown',
+	'keydown',
+] as const;
+
+function drawNodes(
+	canvas: HTMLElement,
+	nodes: readonly NodeSpec[],
+	events: string[],
+): void {
 	canvas.empty();
 	// Stands in for the edges <svg>, also a canvas child.
 	canvas.createDiv({ cls: 'mindmap-edges' });
@@ -33,6 +50,10 @@ function drawNodes(canvas: HTMLElement, nodes: readonly NodeSpec[]): void {
 			],
 		});
 		el.dataset.line = String(spec.line);
+		for (const type of NODE_EVENTS)
+			el.addEventListener(type, () =>
+				events.push(`${spec.line}:${type}`),
+			);
 		const head = el.createDiv({ cls: 'mindmap-node-head' });
 		head.createSpan({ cls: 'mindmap-node-text', text: spec.text });
 		if (spec.body?.length) {
@@ -63,7 +84,8 @@ export function drawMap(
 	const scroller = content.createDiv({ cls: 'mindmap-scroller' });
 	const surface = scroller.createDiv({ cls: 'mindmap-surface' });
 	const canvas = surface.createDiv({ cls: 'mindmap-canvas' });
-	drawNodes(canvas, nodes);
+	const nodeEvents: string[] = [];
+	drawNodes(canvas, nodes, nodeEvents);
 	let file = path;
 	const leaf = {
 		isDeferred: false,
@@ -74,7 +96,8 @@ export function drawMap(
 		leaf,
 		container,
 		canvas,
-		redraw: (next) => drawNodes(canvas, next),
+		nodeEvents,
+		redraw: (next) => drawNodes(canvas, next, nodeEvents),
 		nodeEl(line: number): HTMLElement {
 			const el = canvas.querySelector<HTMLElement>(
 				`:scope > .mindmap-node[data-line="${line}"]`,

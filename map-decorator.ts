@@ -8,13 +8,19 @@ import type { ApiComment } from './annoteca-api';
 import type { MapAdapter } from './adapters/map-adapter';
 import type { AnnotecaStatus } from './annoteca';
 import { badgesFor } from './badge-model';
+import type { NodeBadge } from './badge-model';
 import { clearNodeControls, drawNodeControls } from './badge-view';
+import type { NodeControlActions } from './badge-view';
+import { NodeActions } from './node-actions';
+import type { NodeTarget } from './node-actions';
 
 export interface DecoratorDeps {
 	readonly adapter: MapAdapter;
 	annoteca(): AnnotecaStatus;
 	// The note text the comments' marker offsets count into.
 	savedText(path: string): Promise<string | null>;
+	// The note's live text, which compose() checks a range against.
+	liveText(path: string): Promise<string | null>;
 	// The map's drawing no longer matches the adapter (null: it does again).
 	reportLayout(problem: string | null): void;
 }
@@ -32,11 +38,28 @@ export class MapDecorator {
 	private frame: { win: Window; id: number } | null = null;
 	private loadSeq = 0;
 	private disposed = false;
+	private readonly actions: NodeActions;
+	private readonly controls: NodeControlActions;
 
 	constructor(
 		readonly leaf: WorkspaceLeaf,
 		private readonly deps: DecoratorDeps,
-	) {}
+	) {
+		this.actions = new NodeActions({
+			annoteca: () => deps.annoteca(),
+			liveText: (path) => deps.liveText(path),
+		});
+		this.controls = {
+			openBadge: (nodeEl, anchor) => {
+				const target = this.target(nodeEl);
+				if (target) void this.actions.open(target, anchor);
+			},
+			addComment: (nodeEl) => {
+				const target = this.target(nodeEl);
+				if (target) void this.actions.add(target);
+			},
+		};
+	}
 
 	// Re-read the note's comments, then redraw.
 	async refresh(): Promise<void> {
@@ -108,7 +131,28 @@ export class MapDecorator {
 		drawNodeControls(
 			read.nodes,
 			badgesFor(read.nodes, loaded.comments, loaded.text),
+			this.controls,
 		);
+	}
+
+	// The node a control was pressed on, as the map and the loaded comments
+	// stand at the moment of the press.
+	private target(nodeEl: HTMLElement): NodeTarget | null {
+		if (this.disposed) return null;
+		const canvas = this.deps.adapter.canvas(this.leaf);
+		const path = this.deps.adapter.notePath(this.leaf);
+		if (!canvas || !path) return null;
+		const read = this.deps.adapter.readNodes(canvas);
+		if (read.kind === 'broken') return null;
+		const node = read.nodes.find((n) => n.el === nodeEl);
+		if (!node) return null;
+		const loaded = this.loaded;
+		let badge: NodeBadge | undefined;
+		if (loaded?.path === path)
+			badge = badgesFor(read.nodes, loaded.comments, loaded.text).get(
+				node,
+			);
+		return { path, line: node.line, badge };
 	}
 
 	dispose(): void {

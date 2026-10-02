@@ -50,6 +50,7 @@ function harness(
 		adapter: mindmapEditorAdapter,
 		annoteca: () => status,
 		savedText: () => Promise.resolve(NOTE),
+		liveText: () => Promise.resolve(NOTE),
 		reportLayout: (problem) => layout.push(problem),
 	});
 	return {
@@ -228,6 +229,7 @@ describe('MapDecorator', () => {
 			adapter: mindmapEditorAdapter,
 			annoteca: () => ({ kind: 'ready', api }),
 			savedText: () => Promise.resolve(NOTE),
+			liveText: () => Promise.resolve(NOTE),
 			reportLayout: () => undefined,
 		});
 		const stale = decorator.refresh();

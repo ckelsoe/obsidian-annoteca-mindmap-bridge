@@ -10,6 +10,44 @@ export class PluginSettingTab {}
 export class TFile {}
 export class MarkdownView {}
 
+// A menu item as the code under test builds it.
+export class MenuItem {
+	title = '';
+	disabled = false;
+	click: (() => void) | null = null;
+	setTitle(title: string): this {
+		this.title = title;
+		return this;
+	}
+	setDisabled(disabled: boolean): this {
+		this.disabled = disabled;
+		return this;
+	}
+	onClick(cb: () => void): this {
+		this.click = cb;
+		return this;
+	}
+}
+
+// Every menu shown during a test, oldest first. Clear it in beforeEach.
+export const menuLog: Menu[] = [];
+
+export class Menu {
+	items: MenuItem[] = [];
+	shownIn: Document | null = null;
+	addItem(cb: (item: MenuItem) => unknown): this {
+		const item = new MenuItem();
+		cb(item);
+		this.items.push(item);
+		return this;
+	}
+	showAtPosition(_position: { x: number; y: number }, doc?: Document): this {
+		this.shownIn = doc ?? null;
+		menuLog.push(this);
+		return this;
+	}
+}
+
 // Every Notice raised during a test, oldest first. Clear it in beforeEach.
 export const noticeLog: string[] = [];
 

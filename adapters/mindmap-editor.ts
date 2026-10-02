@@ -17,6 +17,9 @@
 //   it, each with its own `data-line`.
 // - A redraw empties the canvas and appends fresh node elements, so a change
 //   to the canvas's direct children is the signal that badges are gone.
+// - A selected node carries the class `is-selected`. styles.css uses it,
+//   with `mindmap-node`, to show the "+" button on the selected node, which
+//   is how a touch screen reaches it.
 
 import type { WorkspaceLeaf } from 'obsidian';
 import type { MapAdapter, MapNode, MapRead } from './map-adapter';
