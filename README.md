@@ -4,15 +4,46 @@
 
 Shows Annoteca comment badges on Mind map editor nodes and lets you comment on a node.
 
+This plugin connects two other plugins. You need both:
+
+- [Annoteca](https://github.com/ckelsoe/obsidian-annoteca) 1.20.0 or later, for the comments.
+- [Mind map editor](https://github.com/vulture039/obsidian-mindmap-editor) 1.8.1 or later, for the map.
+
+It is not part of either plugin and not made by Mind map editor's author. It reads Mind map editor's map from the outside, so a future Mind map editor release can change what it reads. When that happens the badges switch off and the plugin's settings say so. Nothing in your notes is affected.
+
+## What it does
+
+- **Badges on nodes.** A node that holds Annoteca comments shows a small badge with the number of open comments, in the colour of the first open comment's category. When every comment there is resolved, the badge is dimmed. A collapsed node also counts the comments in its hidden branch.
+- **Open a comment from the map.** Click a badge to open its comment in Annoteca. A node with several comments shows a list (category and first words), and each opens its own.
+- **Comment on a node.** Point at a node and press its **+**. Annoteca's own comment form opens with exactly that node's text selected. Nothing is written until you save there. On a touch screen, tap a node to select it, and its **+** shows.
+- **Storage notice.** If the note's comments use Annoteca's inline storage, a notice above the map offers to convert the note to end-of-file storage (see below). It never converts a note unless you press the button.
+
+Both controls on a node work from the keyboard (Tab to them, then Enter or Space).
+
+## Why the storage notice matters
+
+Annoteca's inline storage writes a comment, with its thread and details, across several lines inside the note. Mind map editor edits a note line by line. Moving or deleting a node on the map moves only the first line of such a comment and leaves the rest behind, which damages the comment.
+
+Annoteca's end-of-file storage keeps a one-line marker in the text and the rest of the comment in a store at the end of the note. A node then carries its whole marker with it when you move it. The notice's button runs Annoteca's own "Convert this note to end-of-file comment storage" command on that note. Annoteca can also convert every note in the vault at once from its commands. To make end-of-file storage the default for new comments, change Annoteca's storage setting. That setting, and the per-note `annoteca_storage` property, only affect new comments; a note's existing comments change style only when it is converted.
+
+One thing to know with end-of-file storage: the map shows the store as text of the note's last section. If you drag that last section somewhere else on the map, the store moves with it and is no longer at the end of the note. Annoteca still reads the comments, but keep that section last if you can.
+
+## Requirements
+
+- Obsidian 1.13.0 or later, desktop or mobile.
+- Annoteca 1.20.0 or later (its plugin API version 5).
+- Mind map editor 1.8.1 or later.
+
+If Annoteca is missing or too old, the plugin says so once and shows nothing on the map.
+
 ## Installation
 
-### From Obsidian Community Plugins (recommended)
+### BRAT (pre-release)
 
-1. Open Obsidian settings.
-2. Navigate to **Community plugins**.
-3. Click **Browse**.
-4. Search for **Annoteca MindMap Bridge**.
-5. Click **Install**, then **Enable**.
+1. Install the **BRAT** plugin from Community Plugins.
+2. Open BRAT settings and click **Add Beta Plugin**.
+3. Enter: `https://github.com/ckelsoe/obsidian-annoteca-mindmap-bridge`
+4. Enable **Annoteca MindMap Bridge** in Settings → Community plugins.
 
 ### Manual installation
 
@@ -22,14 +53,9 @@ Shows Annoteca comment badges on Mind map editor nodes and lets you comment on a
 4. Reload Obsidian.
 5. Enable **Annoteca MindMap Bridge** in Settings → Community plugins.
 
-### BRAT (optional, for pre-release testing)
+## Privacy
 
-BRAT lets power users install pre-release builds before they reach the marketplace.
-
-1. Install the **BRAT** plugin from Community Plugins.
-2. Open BRAT settings and click **Add Beta Plugin**.
-3. Enter: `https://github.com/ckelsoe/obsidian-annoteca-mindmap-bridge`
-4. Enable **Annoteca MindMap Bridge** in Settings → Community plugins.
+The plugin makes no network requests and never writes to your notes itself. See [PRIVACY.md](./PRIVACY.md).
 
 ## Community
 
