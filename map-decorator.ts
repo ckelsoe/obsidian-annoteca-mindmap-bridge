@@ -13,6 +13,8 @@ import { clearNodeControls, drawNodeControls } from './badge-view';
 import type { NodeControlActions } from './badge-view';
 import { NodeActions } from './node-actions';
 import type { NodeTarget } from './node-actions';
+import { multiLineMarkers } from './storage-guard';
+import { clearStorageNotice, drawStorageNotice } from './storage-notice';
 
 export interface DecoratorDeps {
 	readonly adapter: MapAdapter;
@@ -23,6 +25,11 @@ export interface DecoratorDeps {
 	liveText(path: string): Promise<string | null>;
 	// The map's drawing no longer matches the adapter (null: it does again).
 	reportLayout(problem: string | null): void;
+	// The storage notice: whether the user set it aside for a note this
+	// session, and its two buttons.
+	storageNoticeDismissed(path: string): boolean;
+	dismissStorageNotice(path: string): void;
+	convertStorage(path: string): void;
 }
 
 interface Loaded {
@@ -111,6 +118,16 @@ export class MapDecorator {
 	private drawNow(): void {
 		const canvas = this.deps.adapter.canvas(this.leaf);
 		this.watch(canvas);
+		// Separately guarded: a failure in the notice must not take the
+		// badges down with it.
+		try {
+			this.drawNotice();
+		} catch (err) {
+			console.error(
+				'Annoteca MindMap Bridge: could not draw the storage notice',
+				err,
+			);
+		}
 		if (!canvas) return;
 		const read = this.deps.adapter.readNodes(canvas);
 		if (read.kind === 'broken') {
@@ -132,6 +149,32 @@ export class MapDecorator {
 			read.nodes,
 			badgesFor(read.nodes, loaded.comments, loaded.text),
 			this.controls,
+		);
+	}
+
+	// The storage notice depends only on the note, not on how the map is
+	// drawn, so it shows even while the badges are off.
+	private drawNotice(): void {
+		const anchor = this.deps.adapter.noticeAnchor(this.leaf);
+		if (!anchor) return;
+		const loaded = this.loaded;
+		const path = this.deps.adapter.notePath(this.leaf);
+		if (
+			!loaded ||
+			loaded.path !== path ||
+			this.deps.storageNoticeDismissed(loaded.path)
+		) {
+			clearStorageNotice(anchor);
+			return;
+		}
+		const notePath = loaded.path;
+		drawStorageNotice(
+			anchor,
+			multiLineMarkers(loaded.text, loaded.comments),
+			{
+				convert: () => this.deps.convertStorage(notePath),
+				dismiss: () => this.deps.dismissStorageNotice(notePath),
+			},
 		);
 	}
 
@@ -163,6 +206,7 @@ export class MapDecorator {
 		const canvas = this.observed;
 		this.observed = null;
 		if (canvas) clearNodeControls(canvas);
+		clearStorageNotice(this.deps.adapter.noticeAnchor(this.leaf));
 	}
 
 	// One observer per canvas. A redraw empties the canvas and appends new node

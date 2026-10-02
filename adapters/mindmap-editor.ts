@@ -58,7 +58,10 @@ export const mindmapEditorAdapter: MapAdapter = {
 		);
 	},
 
-	noticeHost(leaf: WorkspaceLeaf): HTMLElement | null {
+	// Obsidian's own view content, not Mind map editor's: the leaf lays its
+	// header and content out as a column, so a row before the content sits
+	// above the map without touching the map's elements.
+	noticeAnchor(leaf: WorkspaceLeaf): HTMLElement | null {
 		if (leaf.isDeferred) return null;
 		if (leaf.view.getViewType() !== VIEW_TYPE) return null;
 		return leaf.view.containerEl.querySelector<HTMLElement>(

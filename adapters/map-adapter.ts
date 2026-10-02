@@ -30,8 +30,9 @@ export interface MapAdapter {
 	// The element the map draws its nodes into, or null when the view has not
 	// drawn one (a deferred leaf, or a view still loading).
 	canvas(leaf: WorkspaceLeaf): HTMLElement | null;
-	// The element a notice for this map should be placed in.
-	noticeHost(leaf: WorkspaceLeaf): HTMLElement | null;
+	// The element a notice for this map is placed in front of, so the notice
+	// takes its own row above the map instead of scrolling with it.
+	noticeAnchor(leaf: WorkspaceLeaf): HTMLElement | null;
 	// The drawn nodes, read from the canvas.
 	readNodes(canvas: HTMLElement): MapRead;
 	// Whether a DOM change under the canvas can have added, removed or

@@ -52,6 +52,9 @@ function harness(
 		savedText: () => Promise.resolve(NOTE),
 		liveText: () => Promise.resolve(NOTE),
 		reportLayout: (problem) => layout.push(problem),
+		storageNoticeDismissed: () => false,
+		dismissStorageNotice: () => undefined,
+		convertStorage: () => undefined,
 	});
 	return {
 		decorator,
@@ -231,6 +234,9 @@ describe('MapDecorator', () => {
 			savedText: () => Promise.resolve(NOTE),
 			liveText: () => Promise.resolve(NOTE),
 			reportLayout: () => undefined,
+			storageNoticeDismissed: () => false,
+			dismissStorageNotice: () => undefined,
+			convertStorage: () => undefined,
 		});
 		const stale = decorator.refresh();
 		await decorator.refresh();

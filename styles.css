@@ -91,3 +91,26 @@
 	border-color: var(--interactive-accent-hover);
 	background: var(--interactive-accent-hover);
 }
+
+/* The storage notice: its own row above the map. */
+.annoteca-mmb-storage-notice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	font-size: var(--font-ui-small);
+}
+
+.annoteca-mmb-storage-notice-text {
+	flex: 1 1 16em;
+	color: var(--text-normal);
+}
+
+.annoteca-mmb-storage-notice-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+}

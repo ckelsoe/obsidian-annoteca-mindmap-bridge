@@ -11,6 +11,7 @@ import { annotecaStatus } from './annoteca';
 import type { AnnotecaStatus } from './annoteca';
 import { MapDecorator } from './map-decorator';
 import { liveText, savedText } from './note-text';
+import { convertToEndOfFile } from './storage-guard';
 
 // Long enough to fold a burst of index changes (a save touches several notes'
 // entries) into one reload, short enough to feel live.
@@ -23,6 +24,10 @@ export class BridgeService {
 	private layoutProblem: string | null = null;
 	private readonly reloadAll: Debouncer<[], void>;
 	private stopped = false;
+
+	// Notes whose storage notice the user set aside this session.
+	private readonly noticeDismissed = new Set<string>();
+	private converting = false;
 
 	// The notice about a missing or outdated Annoteca shows once a session.
 	private warnedAbout: AnnotecaStatus['kind'] | null = null;
@@ -120,6 +125,13 @@ export class BridgeService {
 				savedText: (path) => savedText(this.app, path),
 				liveText: (path) => liveText(this.app, path),
 				reportLayout: (problem) => this.reportLayout(problem),
+				storageNoticeDismissed: (path) =>
+					this.noticeDismissed.has(path),
+				dismissStorageNotice: (path) => {
+					this.noticeDismissed.add(path);
+					this.drawAll();
+				},
+				convertStorage: (path) => void this.convertStorage(path),
 			});
 			this.decorators.set(leaf, decorator);
 			void decorator.refresh();
@@ -136,6 +148,28 @@ export class BridgeService {
 				? 'Annoteca MindMap Bridge needs the Annoteca plugin, installed and enabled, to show comments on mind maps.'
 				: 'Annoteca MindMap Bridge needs Annoteca 1.20.0 or later. Update Annoteca to show comments on mind maps.',
 		);
+	}
+
+	private drawAll(): void {
+		for (const decorator of this.decorators.values()) decorator.draw();
+	}
+
+	// One conversion at a time; the note's change then reloads every map,
+	// and the notice goes once its markers are on one line.
+	private async convertStorage(path: string): Promise<void> {
+		if (this.converting) return;
+		this.converting = true;
+		try {
+			await convertToEndOfFile(this.app, path);
+		} catch (err) {
+			console.error(
+				'Annoteca MindMap Bridge: storage conversion failed',
+				err,
+			);
+			new Notice('Could not convert the note to end-of-file storage.');
+		} finally {
+			this.converting = false;
+		}
 	}
 
 	private isMapped(path: string): boolean {

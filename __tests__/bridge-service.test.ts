@@ -1,6 +1,6 @@
 /**
  * @jest-environment jsdom
- * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span></div></body></html>"}
+ * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button></div></body></html>"}
  */
 import type { Plugin, WorkspaceLeaf } from 'obsidian';
 import {
@@ -8,10 +8,11 @@ import {
 	installObsidianDomHelpers,
 	noticeLog,
 } from '../__mocks__/obsidian';
-import type { AnnotecaApi } from '../annoteca-api';
+import type { ApiComment, AnnotecaApi } from '../annoteca-api';
 import { mindmapEditorAdapter } from '../adapters/mindmap-editor';
 import { BridgeService } from '../bridge-service';
-import { NOTE } from './fixtures';
+import { INLINE, inlineComment, NOTE } from './fixtures';
+import { defined } from './helpers/checked';
 import { drawMap } from './map-dom';
 
 beforeAll(() => installObsidianDomHelpers());
@@ -30,7 +31,10 @@ interface World {
 	unsubscribed(): number;
 }
 
-function world(): World & { readonly api: AnnotecaApi } {
+function world(
+	text: string = NOTE,
+	comments: readonly ApiComment[] = [],
+): World & { readonly api: AnnotecaApi } {
 	let annoteca: { api?: unknown } | null = null;
 	const leaves: WorkspaceLeaf[] = [];
 	let subscribed = 0;
@@ -48,7 +52,7 @@ function world(): World & { readonly api: AnnotecaApi } {
 		vault: {
 			on: () => ({}),
 			getFileByPath: () => ({}),
-			cachedRead: () => Promise.resolve(NOTE),
+			cachedRead: () => Promise.resolve(text),
 		},
 	};
 	const plugin = { app, registerEvent: () => undefined } as unknown as Plugin;
@@ -66,7 +70,7 @@ function world(): World & { readonly api: AnnotecaApi } {
 			return {
 				apiVersion: 5,
 				categories: () => [],
-				queryComments: () => Promise.resolve([]),
+				queryComments: () => Promise.resolve(comments),
 				reveal: () => Promise.resolve(true),
 				compose: () => Promise.resolve(true),
 				onChange: () => {
@@ -154,6 +158,30 @@ describe('BridgeService', () => {
 		expect(noticeLog).toEqual([
 			'Annoteca MindMap Bridge needs Annoteca 1.20.0 or later. Update Annoteca to show comments on mind maps.',
 		]);
+		bridge.stop();
+	});
+
+	it('sets the storage notice aside on every map of that note at once', async () => {
+		const w = world(INLINE, [inlineComment]);
+		w.setAnnoteca(w.api);
+		const first = drawMap(document.body, 'notes/plan.md', []);
+		const second = drawMap(document.body, 'notes/plan.md', []);
+		w.leaves.push(first.leaf, second.leaf);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		bridge.start();
+		await new Promise((resolve) => window.setTimeout(resolve, 0));
+		const notice = (map: typeof first): Element | null =>
+			map.container.querySelector('.annoteca-mmb-storage-notice');
+		expect(notice(first)).not.toBeNull();
+		expect(notice(second)).not.toBeNull();
+
+		const later = Array.from(
+			defined(notice(first)).querySelectorAll('button'),
+		).find((b) => b.textContent === 'Not now');
+		defined(later).click();
+
+		expect(notice(first)).toBeNull();
+		expect(notice(second)).toBeNull();
 		bridge.stop();
 	});
 });

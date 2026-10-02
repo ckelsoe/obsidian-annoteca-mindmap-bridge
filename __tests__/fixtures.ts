@@ -38,3 +38,20 @@ export function commentAt(
 		...over,
 	};
 }
+
+// Annoteca's default inline storage: the marker holds the body and metadata
+// across several lines.
+export const INLINE = [
+	'# Plan',
+	'- <!-- annoteca/clarify: Which steps?',
+	'[id=a]',
+	'[range=closed]',
+	'--> review steps<!-- /annoteca a -->',
+	'- ship it',
+].join('\n');
+
+export const inlineComment = commentAt(
+	INLINE,
+	'<!-- annoteca/clarify: Which steps?\n[id=a]\n[range=closed]\n-->',
+	{ id: 'a' },
+);

@@ -72,6 +72,9 @@ function setup(
 		savedText: () => Promise.resolve(NOTE),
 		liveText: () => Promise.resolve(options.text ?? NOTE),
 		reportLayout: () => undefined,
+		storageNoticeDismissed: () => false,
+		dismissStorageNotice: () => undefined,
+		convertStorage: () => undefined,
 	});
 	return { decorator, calls };
 }
