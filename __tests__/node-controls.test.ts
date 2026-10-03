@@ -46,7 +46,12 @@ function setup(
 	options: {
 		reveal?: (id: string) => Promise<boolean>;
 		compose?: () => Promise<boolean>;
+		// The note's live text, NOTE unless given.
 		text?: string;
+		// An open editor on the note; change `text` to type in it.
+		editor?: { text: string };
+		// The text the map drew from; the live text unless given.
+		drawnFrom?: string | null;
 	} = {},
 ): { decorator: MapDecorator; calls: Calls } {
 	const calls: Calls = { revealed: [], composed: [] };
@@ -66,11 +71,17 @@ function setup(
 			return options.compose ? options.compose() : Promise.resolve(true);
 		},
 	} as unknown as AnnotecaApi;
+	map.setSource(
+		options.drawnFrom === undefined
+			? (options.editor?.text ?? options.text ?? NOTE)
+			: options.drawnFrom,
+	);
 	const decorator = new MapDecorator(map.leaf, {
 		adapter: mindmapEditorAdapter,
 		annoteca: () => ({ kind: 'ready', api }),
 		savedText: () => Promise.resolve(NOTE),
-		liveText: () => Promise.resolve(options.text ?? NOTE),
+		liveText: () =>
+			Promise.resolve(options.editor?.text ?? options.text ?? NOTE),
 		reportLayout: () => undefined,
 		storageNoticeDismissed: () => false,
 		dismissStorageNotice: () => undefined,
@@ -92,6 +103,15 @@ function press(el: HTMLElement): void {
 	el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
 	el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
 	el.click();
+}
+
+// The map's redraw reaches the bridge in a microtask, and it draws on the
+// next frame.
+async function nextFrame(): Promise<void> {
+	await Promise.resolve();
+	await new Promise<void>((resolve) => {
+		window.requestAnimationFrame(() => resolve());
+	});
 }
 
 function settle(): Promise<void> {
@@ -318,18 +338,78 @@ describe('"+" button', () => {
 
 	it('waits for the map when an edit has shifted the lines under it', async () => {
 		const map = drawMap(document.body, 'notes/plan.md', NODES);
-		// A line typed above, not yet redrawn: line 3 of the live text is
-		// now "automate 6", while the map still labels line 3 "ship it".
-		const shifted = NOTE.replace('# Plan', '# Plan\nnew line');
-		const { decorator, calls } = setup(map, () => [], { text: shifted });
+		const editor = { text: NOTE };
+		const { decorator, calls } = setup(map, () => [], { editor });
 		await decorator.refresh();
 
+		// A line typed above, not yet redrawn: line 3 is now "automate 6".
+		editor.text = NOTE.replace('# Plan', '# Plan\nnew line');
 		press(control(map, 3, 'annoteca-mmb-add'));
 		await settle();
 
 		expect(calls.composed).toEqual([]);
 		expect(noticeLog).toEqual([
 			'The map has not caught up with your latest edits. Try again in a moment.',
+		]);
+	});
+
+	it('waits for the map when the node was deleted', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		const editor = { text: NOTE };
+		const { decorator, calls } = setup(map, () => [], { editor });
+		await decorator.refresh();
+
+		// "review steps" (line 1) deleted; "automate 6" moved up into line 1.
+		editor.text = NOTE.split('\n')
+			.filter((_, i) => i !== 1)
+			.join('\n');
+		press(control(map, 1, 'annoteca-mmb-add'));
+		await settle();
+
+		expect(calls.composed).toEqual([]);
+	});
+
+	it('comments once the map has redrawn with the edit', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		const editor = { text: NOTE };
+		const { decorator, calls } = setup(map, () => [], { editor });
+		await decorator.refresh();
+
+		editor.text = NOTE.replace('# Plan', '# Plan\nnew line');
+		map.redraw(
+			NODES.map((n) => (n.line > 0 ? { ...n, line: n.line + 1 } : n)),
+		);
+		map.setSource(editor.text);
+		await nextFrame();
+		press(control(map, 4, 'annoteca-mmb-add'));
+		await settle();
+
+		const range = defined(calls.composed[0]).range;
+		expect(editor.text.slice(range.start, range.end)).toBe('ship it');
+	});
+
+	it('does not wait for an edit on another line', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		const editor = { text: NOTE };
+		const { decorator, calls } = setup(map, () => [], { editor });
+		await decorator.refresh();
+
+		editor.text = NOTE.replace('Closing words', 'Closing remarks');
+		press(control(map, 3, 'annoteca-mmb-add'));
+		await settle();
+
+		expect(calls.composed).toHaveLength(1);
+	});
+
+	it('refuses when it cannot tell which text the map drew', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		const { decorator, calls } = setup(map, () => [], { drawnFrom: null });
+		await decorator.refresh();
+		press(control(map, 3, 'annoteca-mmb-add'));
+		await settle();
+		expect(calls.composed).toEqual([]);
+		expect(noticeLog).toEqual([
+			'Could not tell which text this node shows. Comment on it from the note instead.',
 		]);
 	});
 

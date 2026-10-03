@@ -11,8 +11,6 @@ export interface MapNode {
 	readonly el: HTMLElement;
 	readonly line: number;
 	readonly bodyLines: readonly number[];
-	// The node's label as the map shows it (rendered, so markup is gone).
-	readonly label: string;
 }
 
 // A read of one map's canvas. `broken` means the map is drawn but not in the
@@ -37,6 +35,9 @@ export interface MapAdapter {
 	noticeAnchor(leaf: WorkspaceLeaf): HTMLElement | null;
 	// The drawn nodes, read from the canvas.
 	readNodes(canvas: HTMLElement): MapRead;
+	// The note text the drawn nodes were built from, with \n line breaks, or
+	// null when the adapter cannot tell. Node lines count into this text.
+	renderedSource(leaf: WorkspaceLeaf): string | null;
 	// Whether a DOM change under the canvas can have added, removed or
 	// replaced nodes, so the badges need drawing again.
 	touchesNodes(record: MutationRecord): boolean;

@@ -6,14 +6,14 @@ import { Menu, Notice } from 'obsidian';
 import type { ApiComment } from './annoteca-api';
 import type { AnnotecaStatus } from './annoteca';
 import type { NodeBadge } from './badge-model';
-import { composeRange, lineShowsLabel } from './node-range';
+import { composeRange } from './node-range';
 
 // The node a control was pressed on, looked up when it was pressed.
 export interface NodeTarget {
 	readonly path: string;
 	readonly line: number;
-	// The node's label as the map shows it.
-	readonly label: string;
+	// The text the map drew its nodes from, or null when it cannot be told.
+	readonly renderedSource: string | null;
 	readonly badge: NodeBadge | undefined;
 }
 
@@ -91,10 +91,19 @@ export class NodeActions {
 		this.composing = true;
 		try {
 			const text = await this.deps.liveText(target.path);
-			if (
-				text !== null &&
-				!lineShowsLabel(text, target.line, target.label)
-			) {
+			// The map's line numbers count into the text it last drew. If the
+			// node's line there differs from the same line now (a line typed
+			// above it, the node deleted, its text edited), the map is behind
+			// the editor and the range would land on the wrong text. Without
+			// the drawn text there is no way to be sure, so refuse.
+			if (target.renderedSource === null) {
+				new Notice(
+					'Could not tell which text this node shows. Comment on it from the note instead.',
+				);
+				return;
+			}
+			const drawnLine = target.renderedSource.split('\n')[target.line];
+			if (text !== null && text.split('\n')[target.line] !== drawnLine) {
 				new Notice(
 					'The map has not caught up with your latest edits. Try again in a moment.',
 				);

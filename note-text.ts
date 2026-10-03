@@ -19,14 +19,21 @@ export async function savedText(
 	return normalizeLineEndings(await app.vault.cachedRead(file));
 }
 
-// The note's live text: an open editor's when there is one, which can be
-// ahead of the disk by unsaved typing, else the disk. This is the text
-// Annoteca's compose() checks a range against.
-export async function liveText(app: App, path: string): Promise<string | null> {
+// An open editor's text for the note, or null when no editor shows it.
+// Synchronous, so it can be read in the same frame as a map redraw.
+function editorText(app: App, path: string): string | null {
 	for (const leaf of app.workspace.getLeavesOfType('markdown')) {
 		const view = leaf.view;
 		if (view instanceof MarkdownView && view.file?.path === path)
 			return normalizeLineEndings(view.editor.getValue());
 	}
-	return savedText(app, path);
+	return null;
+}
+
+// The note's live text: an open editor's when there is one, which can be
+// ahead of the disk by unsaved typing, else the disk. This is the text
+// Annoteca's compose() checks a range against.
+export function liveText(app: App, path: string): Promise<string | null> {
+	const open = editorText(app, path);
+	return open !== null ? Promise.resolve(open) : savedText(app, path);
 }

@@ -201,7 +201,10 @@ export class MapDecorator {
 			badge = badgesFor(read.nodes, loaded.comments, loaded.text).get(
 				node,
 			);
-		return { path, line: node.line, label: node.label, badge };
+		// Read at the press, not at the last draw: it is the text these node
+		// elements were built from.
+		const source = this.deps.adapter.renderedSource(this.leaf);
+		return { path, line: node.line, renderedSource: source, badge };
 	}
 
 	dispose(): void {

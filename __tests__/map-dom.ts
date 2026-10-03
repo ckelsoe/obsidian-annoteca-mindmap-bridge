@@ -19,6 +19,9 @@ export interface MapFixture {
 	nodeEl(line: number): HTMLElement;
 	// Show another note, as the map does when it follows the active file.
 	showNote(path: string): void;
+	// The text the map says it drew from (Mind map editor's renderedSource);
+	// null removes the field, as a future release of that plugin might.
+	setSource(text: string | null): void;
 	// Events that reached a node's own listeners (select, edit, drag, menu),
 	// as "<line>:<type>".
 	nodeEvents: string[];
@@ -87,9 +90,14 @@ export function drawMap(
 	const nodeEvents: string[] = [];
 	drawNodes(canvas, nodes, nodeEvents);
 	let file = path;
+	const view: { renderedSource?: string } & Record<string, unknown> = {
+		getViewType: () => 'mindmap-editor',
+		containerEl: container,
+		renderedSource: '',
+	};
 	const leaf = {
 		isDeferred: false,
-		view: { getViewType: () => 'mindmap-editor', containerEl: container },
+		view,
 		getViewState: () => ({ type: 'mindmap-editor', state: { file } }),
 	} as unknown as WorkspaceLeaf;
 	return {
@@ -107,6 +115,10 @@ export function drawMap(
 		},
 		showNote(next: string): void {
 			file = next;
+		},
+		setSource(text: string | null): void {
+			if (text === null) delete view.renderedSource;
+			else view.renderedSource = text;
 		},
 	};
 }

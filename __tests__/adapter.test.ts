@@ -67,4 +67,14 @@ describe('Mind map editor adapter', () => {
 		const deferred = { ...map.leaf, isDeferred: true } as WorkspaceLeaf;
 		expect(adapter.canvas(deferred)).toBeNull();
 	});
+
+	it('reads the text the map drew from, with \\n line breaks', () => {
+		const map = drawMap(document.body, 'a.md', []);
+		map.setSource('# A\r\n- b\r- c');
+		expect(adapter.renderedSource(map.leaf)).toBe('# A\n- b\n- c');
+		map.setSource(null);
+		expect(adapter.renderedSource(map.leaf)).toBeNull();
+		const deferred = { ...map.leaf, isDeferred: true } as WorkspaceLeaf;
+		expect(adapter.renderedSource(deferred)).toBeNull();
+	});
 });

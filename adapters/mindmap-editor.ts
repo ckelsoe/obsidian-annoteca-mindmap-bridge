@@ -14,10 +14,14 @@
 //   "n done" pill is also a `.mindmap-node`, with class
 //   `mindmap-node-summary` and no `data-line`.
 // - A node's own text lines are `div.mindmap-node-body-line` elements inside
-//   it, each with its own `data-line`. Its label is the rendered text in
-//   `.mindmap-node-text`.
+//   it, each with its own `data-line`.
 // - A redraw empties the canvas and appends fresh node elements, so a change
 //   to the canvas's direct children is the signal that badges are gone.
+// - The view keeps the text it last drew in a private field,
+//   `renderedSource`, assigned in the same synchronous step that rebuilds
+//   the canvas from it (render(), and its own cursor-follow code compares
+//   against it). It is the only reliable answer to "which text do these
+//   node lines count into" while an editor is ahead of the map.
 // - A selected node carries the class `is-selected`. styles.css uses it,
 //   with `mindmap-node`, to show the "+" button on the selected node, which
 //   is how a touch screen reaches it.
@@ -31,7 +35,6 @@ const SNAPSHOT = 'mindmap-render-snapshot';
 const NODE = 'mindmap-node';
 const SUMMARY = 'mindmap-node-summary';
 const BODY_LINE = 'mindmap-node-body-line';
-const LABEL = 'mindmap-node-text';
 
 function lineOf(el: HTMLElement): number | null {
 	const raw = el.dataset.line;
@@ -91,10 +94,20 @@ export const mindmapEditorAdapter: MapAdapter = {
 				const bodyLine = lineOf(bodyEl);
 				if (bodyLine !== null) bodyLines.push(bodyLine);
 			}
-			const label = child.querySelector(`.${LABEL}`)?.textContent ?? '';
-			nodes.push({ el: child, line, bodyLines, label });
+			nodes.push({ el: child, line, bodyLines });
 		}
 		return { kind: 'nodes', nodes };
+	},
+
+	renderedSource(leaf: WorkspaceLeaf): string | null {
+		if (leaf.isDeferred) return null;
+		// A private field of Mind map editor's view, read as unknown and
+		// checked, rather than declared on Obsidian's View type: no other code
+		// should see it as part of any view (see the header).
+		const source: unknown = Reflect.get(leaf.view, 'renderedSource');
+		return typeof source === 'string'
+			? source.replace(/\r\n?/g, '\n')
+			: null;
 	},
 
 	touchesNodes(record: MutationRecord): boolean {
