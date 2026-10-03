@@ -24,6 +24,8 @@ All three must pass. `npm run lint` must report zero warnings.
 - Never `eslint-disable` any rule, inline or in config. Fix the code.
 - No `as any`. No non-null assertions (`x!`); tests use `at()` / `defined()` from `__tests__/helpers/checked.ts`.
 - No inline styles. All CSS lives in `styles.css`, scoped under the bridge's own `annoteca-mmb-` classes. Never restyle Mind map editor's elements.
+- The badge and "+" on a node are spans with `role="button"`, `tabindex="0"` and Enter/Space handling, not `<button>` elements. Themes restyle every `button` (size, padding, even `position`) with selectors the bridge cannot outrank. Do not change them back.
+- The "+" is hidden with `opacity: 0` and `pointer-events: none`, not `visibility`, so it stays focusable.
 - Pop-out windows: use the element's own `win` / `doc`, `instanceOf` rather than `instanceof` for DOM checks, and never the global `document` or `window`.
 - Never throw into Mind map editor's view. When the adapter cannot read the map, the bridge shows nothing and reports a status line in its settings tab.
 - Never resolve, edit or delete an Annoteca comment. The API does not allow it and the bridge must not work around that.

@@ -26,11 +26,29 @@ declare global {
 			o?: DomElementInfo | string,
 			callback?: (el: HTMLSpanElement) => void,
 		): HTMLSpanElement;
+		// Each window has its own constructor. A pop-out's canvas is observed
+		// with the pop-out's own, reached through the node's `win`.
+		MutationObserver: typeof MutationObserver;
 	}
 }
 
 declare module 'obsidian' {
 	interface PluginManifest {
 		version: string;
+	}
+
+	// Obsidian internals the official types do not declare. Declared once
+	// here so every caller shares one shape.
+	interface App {
+		// The installed plugins. getPlugin answers null for a plugin that is
+		// not loaded; `api` is whatever public API a plugin exposes.
+		plugins: {
+			getPlugin(id: string): { api?: unknown } | null;
+		};
+		// Runs a registered command by id; false when it did not run (an
+		// editor command with no active editor, or an unknown id).
+		commands: {
+			executeCommandById(id: string): boolean;
+		};
 	}
 }

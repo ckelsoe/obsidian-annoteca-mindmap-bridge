@@ -23,3 +23,110 @@
 .annoteca-mindmap-bridge-footer-separator {
 	color: var(--text-faint);
 }
+
+/* The bridge's controls on a map node: a comment badge (bottom-right) and a
+   "+" button (bottom-left). Absolutely positioned so they never change the
+   node's measured size, and on the bottom corners because the map plugin's
+   own marks sit on the top ones. They are spans acting as buttons (see
+   badge-view.ts), so no theme's button styles reach them. */
+.annoteca-mmb-badge,
+.annoteca-mmb-add {
+	position: absolute;
+	bottom: 0;
+	z-index: 2;
+	box-sizing: border-box;
+	min-width: 1.5em;
+	height: 1.5em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 0.35em;
+	border: 1.5px solid currentColor;
+	border-radius: 0.75em;
+	background: var(--background-primary);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	line-height: 1;
+	cursor: var(--cursor);
+	user-select: none;
+}
+
+/* The colour comes from Annoteca's `annoteca-cat-<id>` class, so the badge
+   follows the user's category colours. */
+.annoteca-mmb-badge {
+	right: 0;
+	transform: translate(40%, 40%);
+}
+
+.annoteca-mmb-badge.is-resolved {
+	opacity: 0.45;
+}
+
+.annoteca-mmb-add {
+	left: 0;
+	transform: translate(-40%, 40%);
+	/* Solid accent, not a muted outline: an outline in a translucent muted
+	   colour rendered as a bare glyph with no disk in Obsidian 1.14, which is
+	   too easy to miss. */
+	border-color: var(--interactive-accent);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	/* Hidden by opacity, not visibility, so it stays focusable and the
+	   keyboard can reach it. */
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* Shown on the node under the pointer, and always on the selected node, which
+   is how it is reached on touch. `mindmap-node` and `is-selected` are Mind map
+   editor's classes; see adapters/mindmap-editor.ts. */
+.mindmap-node:hover > .annoteca-mmb-add,
+.mindmap-node.is-selected > .annoteca-mmb-add,
+.annoteca-mmb-add:focus-visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.annoteca-mmb-add:hover {
+	border-color: var(--interactive-accent-hover);
+	background: var(--interactive-accent-hover);
+}
+
+/* The storage notice: its own row above the map. */
+.annoteca-mmb-storage-notice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	font-size: var(--font-ui-small);
+}
+
+.annoteca-mmb-storage-notice-text {
+	flex: 1 1 16em;
+	color: var(--text-normal);
+}
+
+.annoteca-mmb-storage-notice-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+}
+
+/* On a phone the view header is fixed over the top of the leaf, and the view
+   content clears it with a top margin. The notice takes that margin instead,
+   and the content below it drops its own while the notice is there, so the
+   notice sits below the header and the gap is not doubled. */
+.is-phone .mod-root .workspace-leaf-content .annoteca-mmb-storage-notice {
+	margin-top: var(--view-top-spacing);
+}
+
+.is-phone
+	.mod-root
+	.workspace-leaf-content
+	.annoteca-mmb-storage-notice
+	+ .view-content {
+	margin-top: 0;
+}
