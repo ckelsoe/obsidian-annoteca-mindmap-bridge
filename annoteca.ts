@@ -13,11 +13,6 @@ export type AnnotecaStatus =
 	| { readonly kind: 'missing' }
 	| { readonly kind: 'outdated' };
 
-// `app.plugins` is an Obsidian internal the official types do not declare.
-interface PluginsRegistry {
-	getPlugin(id: string): { api?: unknown } | null;
-}
-
 const METHODS = [
 	'categories',
 	'queryComments',
@@ -34,8 +29,7 @@ function isApi(value: unknown): value is AnnotecaApi {
 }
 
 export function annotecaStatus(app: App): AnnotecaStatus {
-	const registry = (app as { plugins?: PluginsRegistry }).plugins;
-	const plugin = registry?.getPlugin('annoteca');
+	const plugin = app.plugins.getPlugin('annoteca');
 	if (!plugin) return { kind: 'missing' };
 	const api = plugin.api;
 	// Feature-detect the methods as well as the level: a build can report an

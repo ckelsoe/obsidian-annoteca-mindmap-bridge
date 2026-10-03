@@ -101,8 +101,13 @@ function drawBadge(
 	actions: NodeControlActions,
 ): void {
 	const existing = ownChild(node.el, BADGE_CLASS);
+	// A keyboard user on the badge keeps their place when it is replaced:
+	// focus moves to the new badge, or to the node's "+" when it goes.
+	const hadFocus =
+		existing !== null && existing.doc.activeElement === existing;
 	if (!badge) {
 		existing?.remove();
+		if (hadFocus) ownChild(node.el, ADD_CLASS)?.focus();
 		return;
 	}
 	const sig = signature(badge);
@@ -119,6 +124,7 @@ function drawBadge(
 	el.dataset.annotecaMmbSig = sig;
 	el.toggleClass('is-resolved', badge.open === 0);
 	el.toggleClass('has-hidden', badge.hidden > 0);
+	if (hadFocus) el.focus();
 }
 
 function drawAdd(node: MapNode, actions: NodeControlActions): void {

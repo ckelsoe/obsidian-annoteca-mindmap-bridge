@@ -6,12 +6,14 @@ import { Menu, Notice } from 'obsidian';
 import type { ApiComment } from './annoteca-api';
 import type { AnnotecaStatus } from './annoteca';
 import type { NodeBadge } from './badge-model';
-import { composeRange } from './node-range';
+import { composeRange, lineShowsLabel } from './node-range';
 
 // The node a control was pressed on, looked up when it was pressed.
 export interface NodeTarget {
 	readonly path: string;
 	readonly line: number;
+	// The node's label as the map shows it.
+	readonly label: string;
 	readonly badge: NodeBadge | undefined;
 }
 
@@ -89,6 +91,15 @@ export class NodeActions {
 		this.composing = true;
 		try {
 			const text = await this.deps.liveText(target.path);
+			if (
+				text !== null &&
+				!lineShowsLabel(text, target.line, target.label)
+			) {
+				new Notice(
+					'The map has not caught up with your latest edits. Try again in a moment.',
+				);
+				return;
+			}
 			const range =
 				text === null ? null : composeRange(text, target.line);
 			if (!range) {

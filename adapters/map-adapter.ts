@@ -11,6 +11,8 @@ export interface MapNode {
 	readonly el: HTMLElement;
 	readonly line: number;
 	readonly bodyLines: readonly number[];
+	// The node's label as the map shows it (rendered, so markup is gone).
+	readonly label: string;
 }
 
 // A read of one map's canvas. `broken` means the map is drawn but not in the

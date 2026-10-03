@@ -9,7 +9,7 @@
 // the note, so a node carries its whole marker with it. Annoteca converts a
 // note itself; the bridge only offers to run that, never runs it unasked.
 
-import { Notice } from 'obsidian';
+import { MarkdownView, Notice } from 'obsidian';
 import type { App, WorkspaceLeaf } from 'obsidian';
 import type { ApiComment } from './annoteca-api';
 
@@ -28,11 +28,6 @@ export function multiLineMarkers(
 	).length;
 }
 
-// `app.commands` is an Obsidian internal the official types do not declare.
-interface CommandRegistry {
-	executeCommandById(id: string): boolean;
-}
-
 function markdownLeafFor(app: App, path: string): WorkspaceLeaf | null {
 	// By view state, so a restored background tab that was never opened (a
 	// deferred view with no file yet) is found too.
@@ -48,8 +43,7 @@ export async function convertToEndOfFile(
 	path: string,
 ): Promise<boolean> {
 	const file = app.vault.getFileByPath(path);
-	const commands = (app as { commands?: CommandRegistry }).commands;
-	if (!file || !commands) return false;
+	if (!file) return false;
 	let leaf = markdownLeafFor(app, path);
 	if (!leaf) {
 		leaf = app.workspace.getLeaf('tab');
@@ -57,7 +51,17 @@ export async function convertToEndOfFile(
 	}
 	await app.workspace.revealLeaf(leaf);
 	app.workspace.setActiveLeaf(leaf, { focus: true });
-	const ran = commands.executeCommandById(CONVERT_COMMAND);
+	// The command converts whatever note is active. The leaf may have moved
+	// to another note while it opened, so check before running it: a note
+	// the user did not ask for must never be rewritten.
+	const active = app.workspace.getActiveViewOfType(MarkdownView);
+	if (active?.file?.path !== path) {
+		new Notice(
+			'Could not convert the note: another note became active. Try again.',
+		);
+		return false;
+	}
+	const ran = app.commands.executeCommandById(CONVERT_COMMAND);
 	if (!ran)
 		new Notice(
 			'Could not run the conversion. Open the note, then convert it to end-of-file comment storage from the command palette.',

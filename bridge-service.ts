@@ -88,12 +88,7 @@ export class BridgeService {
 	}
 
 	mapPluginLoaded(): boolean {
-		const registry = (
-			this.app as {
-				plugins?: { getPlugin(id: string): unknown };
-			}
-		).plugins;
-		return Boolean(registry?.getPlugin(this.adapter.pluginId));
+		return this.app.plugins.getPlugin(this.adapter.pluginId) !== null;
 	}
 
 	mapPluginName(): string {

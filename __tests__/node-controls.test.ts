@@ -215,6 +215,43 @@ describe('keyboard', () => {
 	});
 });
 
+describe('keyboard focus', () => {
+	it('stays on the badge when its count changes', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		let current: readonly ApiComment[] = [clarify];
+		const { decorator } = setup(map, () => current);
+		await decorator.refresh();
+		const before = control(map, 1, 'annoteca-mmb-badge');
+		before.focus();
+
+		current = [clarify, { ...clarify, id: 'c3' }];
+		await decorator.refresh();
+
+		const after = control(map, 1, 'annoteca-mmb-badge');
+		expect(after).not.toBe(before);
+		expect(after.textContent).toBe('2');
+		expect(document.activeElement).toBe(after);
+	});
+
+	it("moves to the node's + when its badge goes away", async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		let current: readonly ApiComment[] = [clarify];
+		const { decorator } = setup(map, () => current);
+		await decorator.refresh();
+		control(map, 1, 'annoteca-mmb-badge').focus();
+
+		current = [];
+		await decorator.refresh();
+
+		expect(
+			map.nodeEl(1).querySelector(':scope > .annoteca-mmb-badge'),
+		).toBeNull();
+		expect(document.activeElement).toBe(
+			control(map, 1, 'annoteca-mmb-add'),
+		);
+	});
+});
+
 describe('"+" button', () => {
 	it("asks Annoteca to comment on the node's own text", async () => {
 		const map = drawMap(document.body, 'notes/plan.md', NODES);
@@ -279,6 +316,23 @@ describe('"+" button', () => {
 		expect(calls.composed).toHaveLength(2);
 	});
 
+	it('waits for the map when an edit has shifted the lines under it', async () => {
+		const map = drawMap(document.body, 'notes/plan.md', NODES);
+		// A line typed above, not yet redrawn: line 3 of the live text is
+		// now "automate 6", while the map still labels line 3 "ship it".
+		const shifted = NOTE.replace('# Plan', '# Plan\nnew line');
+		const { decorator, calls } = setup(map, () => [], { text: shifted });
+		await decorator.refresh();
+
+		press(control(map, 3, 'annoteca-mmb-add'));
+		await settle();
+
+		expect(calls.composed).toEqual([]);
+		expect(noticeLog).toEqual([
+			'The map has not caught up with your latest edits. Try again in a moment.',
+		]);
+	});
+
 	it('says so when Annoteca will not start the comment', async () => {
 		const map = drawMap(document.body, 'notes/plan.md', NODES);
 		const { decorator } = setup(map, () => [], {
@@ -295,6 +349,8 @@ describe('"+" button', () => {
 	it('says so when the node has no text to cover', async () => {
 		const map = drawMap(document.body, 'notes/plan.md', NODES);
 		const blank = NOTE.replace('- ship it', '- ');
+		// The map has caught up: it shows the item with no label.
+		map.redraw(NODES.map((n) => (n.line === 3 ? { ...n, text: '' } : n)));
 		const { decorator, calls } = setup(map, () => [], { text: blank });
 		await decorator.refresh();
 		press(control(map, 3, 'annoteca-mmb-add'));

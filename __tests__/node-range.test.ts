@@ -1,4 +1,4 @@
-import { commentSpans, composeRange } from '../node-range';
+import { commentSpans, composeRange, lineShowsLabel } from '../node-range';
 import { defined } from './helpers/checked';
 
 // The text a range covers, so each case reads as the words it selects.
@@ -65,5 +65,35 @@ describe('commentSpans', () => {
 			{ start: 13, end: 23 },
 			{ start: 28, end: line.length },
 		]);
+	});
+});
+
+describe('lineShowsLabel', () => {
+	const text = [
+		'# Release **plan**',
+		'- see [[Specs|the specs]] first',
+		'- <!-- annoteca/tone: [id=b] -->check the tags<!-- /annoteca b -->',
+		'- ship it',
+	].join('\n');
+
+	it('matches a rendered label against its markdown source', () => {
+		expect(lineShowsLabel(text, 0, 'Release plan')).toBe(true);
+		expect(lineShowsLabel(text, 1, 'see the specs first')).toBe(true);
+		expect(lineShowsLabel(text, 2, 'check the tags')).toBe(true);
+	});
+
+	it('rejects a line that holds a different node', () => {
+		expect(lineShowsLabel(text, 3, 'check the tags')).toBe(false);
+		expect(lineShowsLabel(text, 9, 'ship it')).toBe(false);
+		// Every letter is there, but not in this order.
+		expect(lineShowsLabel(text, 2, 'tags check')).toBe(false);
+	});
+
+	it('cannot judge an empty label, so it does not block on one', () => {
+		expect(lineShowsLabel(text, 3, '  ')).toBe(true);
+	});
+
+	it('ignores words that only appear inside comment syntax', () => {
+		expect(lineShowsLabel(text, 2, 'annoteca tone')).toBe(false);
 	});
 });

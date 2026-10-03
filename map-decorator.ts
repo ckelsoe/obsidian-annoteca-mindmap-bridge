@@ -201,7 +201,7 @@ export class MapDecorator {
 			badge = badgesFor(read.nodes, loaded.comments, loaded.text).get(
 				node,
 			);
-		return { path, line: node.line, badge };
+		return { path, line: node.line, label: node.label, badge };
 	}
 
 	dispose(): void {

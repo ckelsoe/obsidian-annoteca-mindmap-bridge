@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button></div></body></html>"}
  */
+import { MarkdownView } from 'obsidian';
 import type { App, WorkspaceLeaf } from 'obsidian';
 import { installObsidianDomHelpers, noticeLog } from '../__mocks__/obsidian';
 import type { AnnotecaApi } from '../annoteca-api';
@@ -142,10 +143,14 @@ describe('convertToEndOfFile', () => {
 		opened: WorkspaceLeaf[];
 	}
 
+	// `switchTo`: the note the leaf ends up showing instead, as when it
+	// moves to another note while it opens.
 	function workspace(
 		markdownFiles: readonly string[],
 		commandRuns = true,
+		switchTo?: string,
 	): Workspace {
+		let activeFile: string | null = null;
 		const ran: string[] = [];
 		const activated: WorkspaceLeaf[] = [];
 		const opened: WorkspaceLeaf[] = [];
@@ -153,9 +158,14 @@ describe('convertToEndOfFile', () => {
 			({
 				getViewState: () => ({ type: 'markdown', state: { file } }),
 			}) as unknown as WorkspaceLeaf;
+		let freshFile: string | null = null;
 		const fresh = {
-			getViewState: () => ({ type: 'empty', state: {} }),
-			openFile: () => {
+			getViewState: () => ({
+				type: 'markdown',
+				state: { file: freshFile },
+			}),
+			openFile: (file: { path: string }) => {
+				freshFile = file.path;
 				opened.push(fresh);
 				return Promise.resolve();
 			},
@@ -166,7 +176,21 @@ describe('convertToEndOfFile', () => {
 				getLeavesOfType: () => markdownFiles.map(leafFor),
 				getLeaf: () => fresh,
 				revealLeaf: () => Promise.resolve(),
-				setActiveLeaf: (leaf: WorkspaceLeaf) => activated.push(leaf),
+				setActiveLeaf: (leaf: WorkspaceLeaf) => {
+					activated.push(leaf);
+					const file = leaf.getViewState().state?.file;
+					activeFile =
+						switchTo ?? (typeof file === 'string' ? file : null);
+				},
+				getActiveViewOfType: () =>
+					activeFile === null
+						? null
+						: Object.assign(
+								Object.create(MarkdownView.prototype) as object,
+								{
+									file: { path: activeFile },
+								},
+							),
 			},
 			commands: {
 				executeCommandById: (id: string) => {
@@ -194,6 +218,15 @@ describe('convertToEndOfFile', () => {
 		expect(w.opened).toHaveLength(1);
 		expect(w.activated).toEqual(w.opened);
 		expect(w.ran).toEqual(['annoteca:convert-note-to-eof-storage']);
+	});
+
+	it('refuses when another note became active while the note opened', async () => {
+		const w = workspace(['notes/plan.md'], true, 'other.md');
+		expect(await convertToEndOfFile(w.app, 'notes/plan.md')).toBe(false);
+		expect(w.ran).toEqual([]);
+		expect(noticeLog).toEqual([
+			'Could not convert the note: another note became active. Try again.',
+		]);
 	});
 
 	it('says how to do it by hand when the command does not run', async () => {
