@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-10-03
+
+First beta. Needs Annoteca 1.20.0 or later and Mind map editor 1.8.1 or later.
+
 ### Added
 
 - Comment badges on Mind map editor nodes. Each node that holds Annoteca comments shows the open count, coloured by the first open comment's category, and dimmed when every comment there is resolved. A collapsed node also counts the comments in its hidden branch.
