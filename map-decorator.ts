@@ -64,6 +64,15 @@ export class MapDecorator {
 	private disposed = false;
 	private flashing: { el: HTMLElement; win: Window; id: number } | null =
 		null;
+	// A go-to the map did not take: the note, the line it landed on, and what
+	// the map had selected then. While that note and selection stand, the next
+	// go-to steps on from the landed line, or it would land on the same node
+	// again.
+	private landed: {
+		path: string;
+		line: number;
+		selected: number | null;
+	} | null = null;
 	private readonly actions: NodeActions;
 	private readonly controls: NodeControlActions;
 
@@ -93,6 +102,9 @@ export class MapDecorator {
 		const seq = ++this.loadSeq;
 		const path = this.deps.adapter.notePath(this.leaf);
 		this.requested = path;
+		// A landing belongs to the note it was made on; another note, even
+		// one that later switches back, starts from its own selection.
+		if (this.landed && this.landed.path !== path) this.landed = null;
 		const status = this.deps.annoteca();
 		if (!path || status.kind !== 'ready') {
 			this.loaded = null;
@@ -219,16 +231,26 @@ export class MapDecorator {
 		const read = this.deps.adapter.readNodes(canvas);
 		if (read.kind === 'broken') return false;
 		const badges = badgesFor(read.nodes, this.shown(loaded), loaded.text);
+		const selected = this.deps.adapter.selectedLine(canvas);
+		const from =
+			this.landed?.path === path && this.landed.selected === selected
+				? this.landed.line
+				: selected;
 		const line = stepTo(
 			[...badges.keys()].map((node) => node.line),
-			this.deps.adapter.selectedLine(canvas),
+			from,
 			direction,
 		);
 		const node = read.nodes.find((n) => n.line === line);
 		if (!node) return false;
 		// The map normally takes the selection. If it does not, the node is
 		// still scrolled into view, and a short mark shows where.
-		if (!this.deps.adapter.select(node)) this.flash(node.el);
+		if (this.deps.adapter.select(node)) {
+			this.landed = null;
+		} else {
+			this.landed = { path, line: node.line, selected };
+			this.flash(node.el);
+		}
 		return true;
 	}
 

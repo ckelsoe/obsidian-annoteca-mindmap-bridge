@@ -316,6 +316,53 @@ describe('go to next/previous node with comments', () => {
 		}
 	});
 
+	// The map keeps its old selection, so stepping from it would land on the
+	// same node every time.
+	it('steps on from where it landed when the map does not select', async () => {
+		const { map, decorator } = await setup();
+		decorator.goTo(1);
+		expect(map.nodeEl(0).hasClass('annoteca-mmb-flash')).toBe(true);
+		decorator.goTo(1);
+		expect(map.nodeEl(1).hasClass('annoteca-mmb-flash')).toBe(true);
+		decorator.goTo(1);
+		expect(map.nodeEl(2).hasClass('annoteca-mmb-flash')).toBe(true);
+		decorator.goTo(-1);
+		expect(map.nodeEl(1).hasClass('annoteca-mmb-flash')).toBe(true);
+	});
+
+	it("starts from the user's own selection once it changes", async () => {
+		const { map, decorator } = await setup();
+		decorator.goTo(1);
+		decorator.goTo(1);
+		// The user selects line 2 on the map.
+		map.nodeEl(2).addClass('is-selected');
+		decorator.goTo(1);
+		expect(map.nodeEl(0).hasClass('annoteca-mmb-flash')).toBe(true);
+	});
+
+	it('forgets where it landed when the map shows another note', async () => {
+		const { map, decorator } = await setup();
+		decorator.goTo(1);
+		decorator.goTo(1);
+		map.showNote('notes/other.md');
+		await decorator.refresh();
+		decorator.goTo(1);
+		// The first badged node again, not the one after line 1.
+		expect(map.nodeEl(0).hasClass('annoteca-mmb-flash')).toBe(true);
+	});
+
+	it('does not revive a landing after switching away and back', async () => {
+		const { map, decorator } = await setup();
+		decorator.goTo(1);
+		decorator.goTo(1);
+		map.showNote('notes/other.md');
+		await decorator.refresh();
+		map.showNote('notes/plan.md');
+		await decorator.refresh();
+		decorator.goTo(1);
+		expect(map.nodeEl(0).hasClass('annoteca-mmb-flash')).toBe(true);
+	});
+
 	it('clears a pending mark when disposed', async () => {
 		const { map, decorator } = await setup();
 		decorator.goTo(1);
