@@ -57,7 +57,17 @@ If Annoteca is missing or too old, the plugin says so once and shows nothing on 
 
 ## Installation
 
-### BRAT
+### From Obsidian community plugins (recommended)
+
+1. Open Obsidian settings.
+2. Navigate to **Community plugins**.
+3. Click **Browse**.
+4. Search for **Annoteca MindMap Bridge**.
+5. Click **Install**, then **Enable**.
+
+Or open its page in the store: [Annoteca MindMap Bridge](https://community.obsidian.md/plugins/annoteca-mindmap-bridge).
+
+### BRAT (optional, for pre-release testing)
 
 1. Install the **BRAT** plugin from Community Plugins.
 2. Open BRAT settings and click **Add Beta Plugin**.
