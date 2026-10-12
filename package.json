@@ -1,6 +1,6 @@
 {
 	"name": "annoteca-mindmap-bridge",
-	"version": "0.1.0-beta.1",
+	"version": "1.0.0",
 	"description": "Shows Annoteca comment badges on Mind map editor nodes and lets you comment on a node.",
 	"main": "main.js",
 	"type": "module",
