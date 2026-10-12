@@ -11,7 +11,15 @@ import { annotecaStatus } from './annoteca';
 import type { AnnotecaStatus } from './annoteca';
 import { MapDecorator } from './map-decorator';
 import { liveText, savedText } from './note-text';
+import type { BridgeSettings } from './settings';
 import { convertToEndOfFile } from './storage-guard';
+
+// What the bridge reads from, and asks of, the plugin's saved settings.
+export interface SettingsAccess {
+	settings(): BridgeSettings;
+	// The filter row's button: back to every comment in every category.
+	clearFilter(): void;
+}
 
 // Long enough to fold a burst of index changes (a save touches several notes'
 // entries) into one reload, short enough to feel live.
@@ -35,6 +43,7 @@ export class BridgeService {
 	constructor(
 		private readonly plugin: Plugin,
 		private readonly adapter: MapAdapter,
+		private readonly prefs: SettingsAccess,
 	) {
 		this.app = plugin.app;
 		this.reloadAll = debounce(
@@ -127,6 +136,8 @@ export class BridgeService {
 					this.drawAll();
 				},
 				convertStorage: (path) => void this.convertStorage(path),
+				settings: () => this.prefs.settings(),
+				clearFilter: () => this.prefs.clearFilter(),
 			});
 			this.decorators.set(leaf, decorator);
 			void decorator.refresh();
@@ -143,6 +154,23 @@ export class BridgeService {
 				? 'Annoteca MindMap Bridge needs the Annoteca plugin, installed and enabled, to show comments on mind maps.'
 				: 'Annoteca MindMap Bridge needs Annoteca 1.20.0 or later. Update Annoteca to show comments on mind maps.',
 		);
+	}
+
+	// The filter or tint changed: every map redraws from what it has loaded.
+	settingsChanged(): void {
+		this.drawAll();
+	}
+
+	// "Go to next/previous node with comments" on the map in front. Answers
+	// the command's check: false when that is not a map.
+	goTo(direction: 1 | -1, checking: boolean): boolean {
+		const leaf = this.app.workspace.getMostRecentLeaf();
+		const decorator = leaf ? this.decorators.get(leaf) : undefined;
+		if (!decorator) return false;
+		if (checking) return true;
+		if (!decorator.goTo(direction))
+			new Notice('No node on this map has a comment badge.');
+		return true;
 	}
 
 	private drawAll(): void {

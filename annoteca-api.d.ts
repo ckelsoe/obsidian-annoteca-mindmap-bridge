@@ -47,6 +47,14 @@ export interface ApiComment {
 	readonly marker: { readonly start: number; readonly end: number };
 }
 
+// What a resolve() or reopen() call did. 'done': the note was changed.
+// 'unchanged': it was already in that state. 'not-found': no indexed note
+// carries that id. 'addressed': resolve() refused because a proposed edit is
+// waiting for accept, revise or reject. 'blocked': Annoteca would not write
+// because the note's comment syntax is damaged around it.
+export type ApiWriteResult =
+	'done' | 'unchanged' | 'not-found' | 'addressed' | 'blocked';
+
 // The text a compose() call asks the user to comment on, as editor offsets.
 export interface ComposeRange {
 	readonly start: number;
@@ -135,8 +143,9 @@ export interface AnnotecaApi {
 	// on-disk copy), and it parses that rather than the vault or the stale index.
 	anchorsFor(content: string): readonly AnchorRange[];
 
-	// Create comments on your behalf. CREATE ONLY: there is no path to resolve,
-	// delete, edit or reply, because resolution is a judgement about the writing.
+	// Create comments on your behalf. It never resolves, deletes, edits or replies,
+	// because resolution is a judgement about the writing; resolve() and reopen()
+	// exist only for an action the reader takes.
 	// Idempotent on `author:sourceKey`. Above the user's promotion budget it asks
 	// first, and a refusal (or a stale `expected`) returns an empty array rather
 	// than throwing. `expected` is the note's editor text the anchors were
@@ -161,7 +170,53 @@ export interface AnnotecaApi {
 	// inside existing comment syntax or the note properties.
 	compose(path: string, range: ComposeRange): Promise<boolean>;
 
+	// apiVersion >= 7. Resolve or reopen a comment by id, exactly as a click in
+	// the hub does: the same write queue and freshness guards, the reader's author
+	// tag, and the same notice ("Resolved.", "Reopened."). resolve() honours the
+	// delete-on-resolve setting, so with it on the comment is removed from the
+	// note. resolve() never decides a proposed edit: an addressed comment answers
+	// 'addressed' and nothing is written.
+	resolve(commentId: string): Promise<ApiWriteResult>;
+	reopen(commentId: string): Promise<ApiWriteResult>;
+
 	// Fires when the comment index changes. Returns its own unsubscribe; call it
 	// on unload or the callback outlives your plugin.
 	onChange(cb: () => void): () => void;
+
+	// apiVersion >= 6. What happened to which comment: created, replied,
+	// addressed, resolved, reopened, moved, deleted. Reported once a burst of
+	// changes settles (a few seconds), diffed by comment id, so a comment with
+	// no id is never reported. Subscribing starts the vault scan if needed;
+	// events begin with a `resync` event, and anything earlier is read with
+	// queryComments. Returns its own unsubscribe.
+	onCommentEvent(cb: (event: ApiCommentEvent) => void): () => void;
+}
+
+// One thing that happened to one comment. Metadata only: read the note for the
+// body. `author` and `date` are whoever did this thing (the reply's author for
+// replied, the resolver for resolved), absent when the note does not say.
+export interface ApiCommentEvent {
+	readonly type:
+		| 'created'
+		| 'replied'
+		| 'addressed'
+		| 'resolved'
+		| 'reopened'
+		| 'moved'
+		| 'deleted'
+		| 'resync';
+	// Absent only on resync.
+	readonly id?: string;
+	// The note the comment is in now; for deleted, the note it was in.
+	readonly path?: string;
+	// moved only: the note it was in before.
+	readonly oldPath?: string;
+	readonly category?: string;
+	readonly author?: string;
+	readonly date?: string;
+	// Set for a comment a plugin created through promote().
+	readonly source?: { readonly tag: string; readonly key: string };
+	// resync only: 'scan' when events start after indexing the vault,
+	// 'journal-on' in the event journal when the user turns it on.
+	readonly reason?: 'scan' | 'journal-on';
 }

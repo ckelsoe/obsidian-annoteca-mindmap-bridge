@@ -92,8 +92,38 @@
 	background: var(--interactive-accent-hover);
 }
 
-/* The storage notice: its own row above the map. */
-.annoteca-mmb-storage-notice {
+/* A node's tint: an overlay over the whole node, under the badge and "+",
+   never a style on the map's own element. The colour is mixed with
+   transparent so the node's own background and text show through. */
+.annoteca-mmb-tint {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	border-radius: inherit;
+	pointer-events: none;
+}
+
+.annoteca-mmb-tint.is-level-1 {
+	background: color-mix(in srgb, var(--color-red) 12%, transparent);
+}
+
+.annoteca-mmb-tint.is-level-2 {
+	background: color-mix(in srgb, var(--color-red) 22%, transparent);
+}
+
+.annoteca-mmb-tint.is-level-3 {
+	background: color-mix(in srgb, var(--color-red) 34%, transparent);
+}
+
+/* Where "go to node with comments" landed, when the map did not select it. */
+.mindmap-node.annoteca-mmb-flash {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/* The rows above the map (storage notice, filter row): each its own row in
+   front of the view content. */
+.annoteca-mmb-bar {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -104,7 +134,8 @@
 	font-size: var(--font-ui-small);
 }
 
-.annoteca-mmb-storage-notice-text {
+.annoteca-mmb-storage-notice-text,
+.annoteca-mmb-filter-notice-text {
 	flex: 1 1 16em;
 	color: var(--text-normal);
 }
@@ -116,17 +147,44 @@
 }
 
 /* On a phone the view header is fixed over the top of the leaf, and the view
-   content clears it with a top margin. The notice takes that margin instead,
-   and the content below it drops its own while the notice is there, so the
-   notice sits below the header and the gap is not doubled. */
-.is-phone .mod-root .workspace-leaf-content .annoteca-mmb-storage-notice {
+   content clears it with a top margin. The first row takes that margin
+   instead, and whatever follows a row drops its own, so the rows sit below
+   the header and the gap is not doubled. */
+.is-phone .mod-root .workspace-leaf-content .annoteca-mmb-bar {
 	margin-top: var(--view-top-spacing);
 }
 
 .is-phone
 	.mod-root
 	.workspace-leaf-content
-	.annoteca-mmb-storage-notice
-	+ .view-content {
+	.annoteca-mmb-bar
+	+ .annoteca-mmb-bar,
+.is-phone .mod-root .workspace-leaf-content .annoteca-mmb-bar + .view-content {
 	margin-top: 0;
+}
+
+/* Settings: the category toggles, stacked under the row's name so the list
+   has the full width, which matters in a narrow settings pane. */
+.annoteca-mmb-stacked-setting {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-2);
+}
+
+.annoteca-mmb-stacked-setting .setting-item-control {
+	justify-content: flex-start;
+}
+
+.annoteca-mmb-category-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+	width: 100%;
+}
+
+.annoteca-mmb-category-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
 }

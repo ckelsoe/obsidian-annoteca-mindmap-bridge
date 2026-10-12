@@ -58,3 +58,13 @@ export function badgesFor<N extends LineOwner>(
 	}
 	return badges;
 }
+
+// How strongly a node is tinted for its open comments: none, 1, 2 to 3, or 4
+// and more. Absolute steps, not relative to the busiest node, so a node's
+// tint means the same thing on every map.
+export function tintLevel(open: number): 0 | 1 | 2 | 3 {
+	if (open <= 0) return 0;
+	if (open === 1) return 1;
+	if (open <= 3) return 2;
+	return 3;
+}

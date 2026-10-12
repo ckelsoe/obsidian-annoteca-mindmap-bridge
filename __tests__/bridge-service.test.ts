@@ -10,6 +10,12 @@ import {
 } from '../__mocks__/obsidian';
 import type { ApiComment, AnnotecaApi } from '../annoteca-api';
 import { mindmapEditorAdapter } from '../adapters/mindmap-editor';
+import { defaultSettings } from '../settings';
+
+const PREFS = {
+	settings: () => defaultSettings(),
+	clearFilter: () => undefined,
+};
 import { BridgeService } from '../bridge-service';
 import { INLINE, inlineComment, NOTE } from './fixtures';
 import { defined } from './helpers/checked';
@@ -90,7 +96,7 @@ describe('BridgeService', () => {
 		const first = drawMap(document.body, 'a.md', []).leaf;
 		const second = drawMap(document.body, 'b.md', []).leaf;
 		w.leaves.push(first, second);
-		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter, PREFS);
 		bridge.start();
 		expect(bridge.mapCount()).toBe(2);
 
@@ -104,7 +110,7 @@ describe('BridgeService', () => {
 	it('does not reload every map on each sync while Annoteca is absent', () => {
 		const w = world();
 		w.leaves.push(drawMap(document.body, 'a.md', []).leaf);
-		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter, PREFS);
 		bridge.start();
 		bridge.sync();
 		bridge.sync();
@@ -117,7 +123,7 @@ describe('BridgeService', () => {
 		const api = w.api;
 		w.setAnnoteca(api);
 		w.leaves.push(drawMap(document.body, 'a.md', []).leaf);
-		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter, PREFS);
 		bridge.start();
 		bridge.sync();
 		bridge.sync();
@@ -135,7 +141,7 @@ describe('BridgeService', () => {
 
 	it('says once a session that Annoteca is missing, when a map is open', () => {
 		const w = world();
-		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter, PREFS);
 		bridge.start();
 		expect(noticeLog).toEqual([]);
 
@@ -152,7 +158,7 @@ describe('BridgeService', () => {
 		const w = world();
 		w.setAnnoteca({ ...w.api, apiVersion: 4 });
 		w.leaves.push(drawMap(document.body, 'a.md', []).leaf);
-		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter, PREFS);
 		bridge.start();
 		expect(bridge.annoteca().kind).toBe('outdated');
 		expect(noticeLog).toEqual([
@@ -167,7 +173,7 @@ describe('BridgeService', () => {
 		const first = drawMap(document.body, 'notes/plan.md', []);
 		const second = drawMap(document.body, 'notes/plan.md', []);
 		w.leaves.push(first.leaf, second.leaf);
-		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter);
+		const bridge = new BridgeService(w.plugin, mindmapEditorAdapter, PREFS);
 		bridge.start();
 		await new Promise((resolve) => window.setTimeout(resolve, 0));
 		const notice = (map: typeof first): Element | null =>

@@ -1,8 +1,8 @@
 // Adapter for Mind map editor (`mindmap-editor`, vulture039). The only file
 // that knows how that plugin draws a map. Its author has said its internals
 // may still change, so every assumption below is a fact checked against its
-// source (1.8.1, commit 1177df1) and must be re-checked on each of its
-// releases:
+// source (1.8.1, commit 1177df1; re-checked against 1.9.0, commit fb43537)
+// and must be re-checked on each of its releases:
 //
 // - The view type is `mindmap-editor`, and its view state carries `file`, the
 //   note's path.
@@ -25,6 +25,14 @@
 // - A selected node carries the class `is-selected`. styles.css uses it,
 //   with `mindmap-node`, to show the "+" button on the selected node, which
 //   is how a touch screen reaches it.
+// - A click on a node element selects that node (its own click listener,
+//   which also moves the editor's cursor to the node's line). The map scrolls
+//   inside a native scroll container, so scrollIntoView reaches a node that
+//   is off screen. "Go to next/previous node with comments" relies on both.
+// - Since 1.9.0 a node holds `mindmap-node-actions`, a toolbar drawn ABOVE
+//   the node while it is hovered or focused, and `mindmap-task-metadata`.
+//   Neither has a `data-line`, and neither reaches the bottom corners the
+//   bridge's controls sit on.
 
 import type { WorkspaceLeaf } from 'obsidian';
 import type { MapAdapter, MapNode, MapRead } from './map-adapter';
@@ -35,6 +43,7 @@ const SNAPSHOT = 'mindmap-render-snapshot';
 const NODE = 'mindmap-node';
 const SUMMARY = 'mindmap-node-summary';
 const BODY_LINE = 'mindmap-node-body-line';
+const SELECTED = 'is-selected';
 
 function lineOf(el: HTMLElement): number | null {
 	const raw = el.dataset.line;
@@ -112,5 +121,23 @@ export const mindmapEditorAdapter: MapAdapter = {
 
 	touchesNodes(record: MutationRecord): boolean {
 		return record.type === 'childList';
+	},
+
+	selectedLine(canvas: HTMLElement): number | null {
+		for (const child of Array.from(canvas.children))
+			if (
+				child.instanceOf(HTMLElement) &&
+				child.hasClass(NODE) &&
+				child.hasClass(SELECTED)
+			)
+				return lineOf(child);
+		return null;
+	},
+
+	select(node: MapNode): boolean {
+		const el = node.el;
+		el.click();
+		el.scrollIntoView({ block: 'center', inline: 'center' });
+		return el.hasClass(SELECTED);
 	},
 };

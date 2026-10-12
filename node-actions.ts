@@ -1,9 +1,11 @@
-// What the controls on a node do: open its comments in Annoteca, or ask
-// Annoteca to start a comment on the node's text. Everything goes through
-// Annoteca's public API; the bridge never writes the note.
+// What the controls on a node do: list its comments to open, resolve or
+// reopen in Annoteca, or ask Annoteca to start a comment on the node's text.
+// Everything goes through Annoteca's public API; the bridge never writes the
+// note.
 
 import { Menu, Notice } from 'obsidian';
 import type { ApiComment } from './annoteca-api';
+import { canResolve } from './annoteca';
 import type { AnnotecaStatus } from './annoteca';
 import type { NodeBadge } from './badge-model';
 import { composeRange } from './node-range';
@@ -39,10 +41,12 @@ export class NodeActions {
 
 	constructor(private readonly deps: NodeActionDeps) {}
 
-	// One comment opens straight away; several open a menu to pick from.
-	async open(target: NodeTarget, anchor: HTMLElement): Promise<void> {
+	// A menu of the node's comments, each with its actions, even when there
+	// is only one: one behaviour for every badge, and Resolve and Reopen are
+	// reachable on touch, where there is no right-click.
+	open(target: NodeTarget, anchor: HTMLElement): void {
 		try {
-			await this.openNow(target, anchor);
+			this.openNow(target, anchor);
 		} catch (err) {
 			console.error(
 				'Annoteca MindMap Bridge: could not open comments',
@@ -52,34 +56,56 @@ export class NodeActions {
 		}
 	}
 
-	private async openNow(
-		target: NodeTarget,
-		anchor: HTMLElement,
-	): Promise<void> {
+	private openNow(target: NodeTarget, anchor: HTMLElement): void {
 		const comments = target.badge?.comments ?? [];
 		const status = this.deps.annoteca();
 		if (status.kind !== 'ready' || comments.length === 0) return;
-		const only = comments.length === 1 ? comments[0] : undefined;
-		if (only) {
-			await this.reveal(only.comment);
-			return;
-		}
+		const resolvable = canResolve(status.api);
 		const names = new Map(
 			status.api.categories().map((c) => [c.id, c.displayName]),
 		);
 		const menu = new Menu();
-		for (const { comment, drawn } of comments) {
+		comments.forEach(({ comment, drawn }, index) => {
+			if (index > 0) menu.addSeparator();
 			const notes: string[] = [];
 			if (comment.resolved) notes.push('resolved');
+			else if (comment.addressed) notes.push('edit awaiting review');
 			if (!drawn) notes.push('hidden on the map');
 			const name = names.get(comment.category) ?? comment.category;
 			const extra = notes.length ? ` (${notes.join(', ')})` : '';
 			menu.addItem((item) => {
 				item.setTitle(`${name}: ${snippet(comment.body)}${extra}`);
+				item.setIcon('message-square');
 				if (comment.id === undefined) item.setDisabled(true);
 				else item.onClick(() => void this.reveal(comment));
 			});
-		}
+			// Annoteca finds a comment by its id, so one without an id can only
+			// be acted on from the note.
+			if (!resolvable || comment.id === undefined) return;
+			if (comment.resolved)
+				menu.addItem((item) =>
+					item
+						.setTitle('Reopen')
+						.setIcon('rotate-ccw')
+						.onClick(() => void this.change(comment, 'reopen')),
+				);
+			else if (comment.addressed)
+				// A proposed edit is decided by accept, revise or reject, in
+				// Annoteca, never by a bare resolve from the map.
+				menu.addItem((item) =>
+					item
+						.setTitle('Review the proposed edit')
+						.setIcon('eye')
+						.onClick(() => void this.reveal(comment)),
+				);
+			else
+				menu.addItem((item) =>
+					item
+						.setTitle('Resolve')
+						.setIcon('check')
+						.onClick(() => void this.change(comment, 'resolve')),
+				);
+		});
 		const rect = anchor.getBoundingClientRect();
 		menu.showAtPosition({ x: rect.left, y: rect.bottom }, anchor.doc);
 	}
@@ -128,6 +154,40 @@ export class NodeActions {
 			new Notice('Could not start a comment on this node.');
 		} finally {
 			this.composing = false;
+		}
+	}
+
+	// Resolve or reopen through Annoteca, which writes the note and shows its
+	// own notice ("Resolved.", "Reopened."); the badge updates when its index
+	// changes. Only the answers Annoteca does not narrate are reported here.
+	private async change(
+		comment: ApiComment,
+		verb: 'resolve' | 'reopen',
+	): Promise<void> {
+		const status = this.deps.annoteca();
+		if (status.kind !== 'ready' || !canResolve(status.api)) return;
+		if (comment.id === undefined) return;
+		try {
+			const result =
+				verb === 'resolve'
+					? await status.api.resolve(comment.id)
+					: await status.api.reopen(comment.id);
+			if (result === 'not-found')
+				new Notice('That comment is no longer in the note.');
+			else if (result === 'addressed')
+				new Notice(
+					'This comment has a proposed edit waiting. Open it to accept, revise or reject the edit.',
+				);
+		} catch (err) {
+			console.error(
+				`Annoteca MindMap Bridge: could not ${verb} a comment`,
+				err,
+			);
+			new Notice(
+				verb === 'resolve'
+					? 'Could not resolve that comment.'
+					: 'Could not reopen that comment.',
+			);
 		}
 	}
 

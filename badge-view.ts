@@ -1,13 +1,16 @@
-// The bridge's own controls on a map node: a comment-count badge and a "+"
-// control. Appended inside the node element and absolutely positioned by
-// styles.css, so they never change the node's measured size. Removed and
-// redrawn freely: the map plugin owns the node, not the bridge.
+// The bridge's own marks on a map node: a comment-count badge, a "+"
+// control, and an optional tint. Appended inside the node element and
+// absolutely positioned by styles.css, so they never change the node's
+// measured size. Removed and redrawn freely: the map plugin owns the node,
+// not the bridge.
 
 import type { MapNode } from './adapters/map-adapter';
+import { tintLevel } from './badge-model';
 import type { NodeBadge } from './badge-model';
 
 const BADGE_CLASS = 'annoteca-mmb-badge';
 const ADD_CLASS = 'annoteca-mmb-add';
+const TINT_CLASS = 'annoteca-mmb-tint';
 
 // Handlers get the node ELEMENT, not a snapshot of the node: they look its
 // line and comments up again when the click happens.
@@ -127,6 +130,28 @@ function drawBadge(
 	if (hadFocus) el.focus();
 }
 
+// An overlay over the whole node, never a style on the map's own element,
+// so a theme's node colours and the map's branch colours are untouched.
+function drawTint(
+	node: MapNode,
+	badge: NodeBadge | undefined,
+	on: boolean,
+): void {
+	const level = on && badge ? tintLevel(badge.open) : 0;
+	const existing = ownChild(node.el, TINT_CLASS);
+	if (level === 0) {
+		existing?.remove();
+		return;
+	}
+	if (existing?.dataset.annotecaMmbLevel === String(level)) return;
+	existing?.remove();
+	const el = node.el.createSpan({
+		cls: [TINT_CLASS, `is-level-${level}`],
+		attr: { 'aria-hidden': 'true' },
+	});
+	el.dataset.annotecaMmbLevel = String(level);
+}
+
 function drawAdd(node: MapNode, actions: NodeControlActions): void {
 	// The root stands for the note itself and has no line to comment on.
 	if (node.line < 0 || ownChild(node.el, ADD_CLASS)) return;
@@ -139,16 +164,21 @@ export function drawNodeControls(
 	nodes: readonly MapNode[],
 	badges: ReadonlyMap<MapNode, NodeBadge>,
 	actions: NodeControlActions,
+	options: { readonly tint: boolean },
 ): void {
 	for (const node of nodes) {
-		drawBadge(node, badges.get(node), actions);
+		const badge = badges.get(node);
+		drawTint(node, badge, options.tint);
+		drawBadge(node, badge, actions);
 		drawAdd(node, actions);
 	}
 }
 
 export function clearNodeControls(canvas: HTMLElement): void {
 	for (const el of Array.from(
-		canvas.querySelectorAll(`.${BADGE_CLASS}, .${ADD_CLASS}`),
+		canvas.querySelectorAll(
+			`.${BADGE_CLASS}, .${ADD_CLASS}, .${TINT_CLASS}`,
+		),
 	))
 		el.remove();
 }

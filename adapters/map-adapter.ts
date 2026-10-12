@@ -41,4 +41,9 @@ export interface MapAdapter {
 	// Whether a DOM change under the canvas can have added, removed or
 	// replaced nodes, so the badges need drawing again.
 	touchesNodes(record: MutationRecord): boolean;
+	// The line of the node the map has selected, or null when none is.
+	selectedLine(canvas: HTMLElement): number | null;
+	// Select a drawn node as the user's own click would, and scroll it into
+	// view. False when the map did not take the selection.
+	select(node: MapNode): boolean;
 }

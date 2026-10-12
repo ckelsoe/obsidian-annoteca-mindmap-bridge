@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Resolve and Reopen from the map.** A badge now always opens a menu of its node's comments, even when there is only one. Each comment has Resolve, or Reopen once it is resolved, which Annoteca carries out exactly as its own button does, including "delete on resolve". A comment with a proposed edit waiting offers "Review the proposed edit" instead, which opens it in Annoteca. Needs Annoteca 1.22.0 or later; with an older Annoteca the menu only opens comments, and the settings say so.
+- **Badge filters**, the plugin's first settings. Show all comments, open ones only, or only those awaiting review, and turn categories off one by one. While a filter is on, a row above the map says what is filtered and has a Clear filter button. The "Filter comment badges" command picks the status filter.
+- **Go to next/previous node with comments**: two commands that select the next badged node on the map in line order, scroll to it, and wrap at the ends. They follow the filter.
+- **Tint nodes by open comments** (off by default): shades each node by how many open comments it holds, one, two or three, or four and more.
+
+### Changed
+- The badge's click opens the menu even for a single comment, where it used to open the comment straight away.
+- Checked against Mind map editor 1.9.0. Its new node toolbar sits above a node, clear of the badge and "+".
+
 ## [0.1.0-beta.1] - 2026-10-03
 
 First beta. Needs Annoteca 1.20.0 or later and Mind map editor 1.8.1 or later.

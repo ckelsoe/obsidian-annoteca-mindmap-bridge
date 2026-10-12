@@ -2,18 +2,15 @@
 // markers: what is at risk, and a button that converts the note. It sits in
 // its own row above the map, never inside the map's own elements.
 
+import { findBar, placeBar } from './notice-bar';
+
 const NOTICE_CLASS = 'annoteca-mmb-storage-notice';
+// First of the rows above the map: it warns about damage, so it leads.
+const ORDER = 0;
 
 export interface StorageNoticeActions {
 	convert(): void;
 	dismiss(): void;
-}
-
-function existingNotice(anchor: HTMLElement): HTMLElement | null {
-	const previous = anchor.previousElementSibling;
-	return previous?.instanceOf(HTMLElement) && previous.hasClass(NOTICE_CLASS)
-		? previous
-		: null;
 }
 
 function message(count: number): string {
@@ -30,20 +27,15 @@ export function drawStorageNotice(
 	count: number,
 	actions: StorageNoticeActions,
 ): void {
-	const existing = existingNotice(anchor);
+	const existing = findBar(anchor, NOTICE_CLASS);
 	if (count === 0) {
 		existing?.remove();
 		return;
 	}
 	if (existing?.dataset.annotecaMmbCount === String(count)) return;
 	existing?.remove();
-	const parent = anchor.parentElement;
-	if (!parent) return;
-	const bar = parent.createDiv({
-		cls: NOTICE_CLASS,
-		attr: { role: 'status' },
-	});
-	parent.insertBefore(bar, anchor);
+	const bar = placeBar(anchor, NOTICE_CLASS, ORDER);
+	if (!bar) return;
 	bar.dataset.annotecaMmbCount = String(count);
 	bar.createDiv({ cls: `${NOTICE_CLASS}-text`, text: message(count) });
 	const buttons = bar.createDiv({ cls: `${NOTICE_CLASS}-buttons` });
@@ -57,5 +49,5 @@ export function drawStorageNotice(
 }
 
 export function clearStorageNotice(anchor: HTMLElement | null): void {
-	if (anchor) existingNotice(anchor)?.remove();
+	if (anchor) findBar(anchor, NOTICE_CLASS)?.remove();
 }
