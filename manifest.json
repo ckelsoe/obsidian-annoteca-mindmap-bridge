@@ -1,7 +1,7 @@
 {
 	"id": "annoteca-mindmap-bridge",
 	"name": "Annoteca MindMap Bridge",
-	"version": "0.1.0-beta.1",
+	"version": "1.0.0",
 	"minAppVersion": "1.13.0",
 	"description": "Shows Annoteca comment badges on Mind map editor nodes and lets you comment on a node.",
 	"author": "Charles Kelsoe (ckelsoe)",
