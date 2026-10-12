@@ -7,18 +7,37 @@ Shows Annoteca comment badges on Mind map editor nodes and lets you comment on a
 This plugin connects two other plugins. You need both:
 
 - [Annoteca](https://github.com/ckelsoe/obsidian-annoteca) 1.20.0 or later, for the comments.
-- [Mind map editor](https://github.com/vulture039/obsidian-mindmap-editor) 1.8.1 or later, for the map.
+- [Mind map editor](https://github.com/vulture039/obsidian-mindmap-editor) 1.8.1 or later, for the map (tested through 1.9.0).
+
+Resolving and reopening comments from the map needs Annoteca 1.22.0 or later. Everything else works from 1.20.0.
 
 It is not part of either plugin and not made by Mind map editor's author. It reads Mind map editor's map from the outside, so a future Mind map editor release can change what it reads. When that happens the badges switch off and the plugin's settings say so. Nothing in your notes is affected.
 
 ## What it does
 
 - **Badges on nodes.** A node that holds Annoteca comments shows a small badge with the number of open comments, in the colour of the first open comment's category. When every comment there is resolved, the badge is dimmed. A collapsed node also counts the comments in its hidden branch.
-- **Open a comment from the map.** Click a badge to open its comment in Annoteca. A node with several comments shows a list (category and first words), and each opens its own.
+- **Act on comments from the map.** Click a badge to list the node's comments (category and first words). Choose a comment to open it in Annoteca. Each has **Resolve** (or **Reopen** once resolved) right under it, which works exactly as resolving in Annoteca does, including its "delete on resolve" setting. A comment with a proposed edit waiting shows **Review the proposed edit** instead, which opens it in Annoteca to accept, revise or reject.
+- **Filter the badges.** Show all comments, open ones only, or only those awaiting review, and turn categories off. While a filter is on, a row above the map says what is filtered, with a **Clear filter** button, so a missing badge is never mistaken for "no comments".
+- **Go from comment to comment.** "Go to next node with comments" and "Go to previous node with comments" select the next badged node on the map in line order, scroll to it, and wrap at the ends. Give them hotkeys to review a long document node by node.
+- **Tint (optional).** Shade each node by how many open comments it holds: one, two or three, or four and more. Off by default.
 - **Comment on a node.** Point at a node and press its **+**. Annoteca's own comment form opens with exactly that node's text selected. Nothing is written until you save there. On a touch screen, tap a node to select it, and its **+** shows.
 - **Storage notice.** If the note's comments use Annoteca's inline storage, a notice above the map offers to convert the note to end-of-file storage (see below). It never converts a note unless you press the button.
 
 Both controls on a node work from the keyboard (Tab to them, then Enter or Space).
+
+If **+** says the map has not caught up with your latest edits, wait a moment and press it again: it refuses rather than comment on the wrong line while the map redraws. If it says it could not tell which text the node shows, comment on that text from the note instead.
+
+## Settings
+
+- **Show**: which comments the badges count. All comments, open only, or awaiting review.
+- **Categories**: one switch per Annoteca category. Turn one off to leave its comments off the map.
+- **Tint nodes by open comments**: off by default.
+- **Status**: whether Annoteca and Mind map editor are connected, and whether your Annoteca can resolve comments from the map.
+
+## Commands
+
+- **Filter comment badges**: pick what the badges show (all, open only, awaiting review).
+- **Go to next node with comments** and **Go to previous node with comments**: available while a mind map is the active view.
 
 ## Why the storage notice matters
 
@@ -31,14 +50,14 @@ One thing to know with end-of-file storage: the map shows the store as text of t
 ## Requirements
 
 - Obsidian 1.13.0 or later, desktop or mobile.
-- Annoteca 1.20.0 or later (its plugin API version 5).
-- Mind map editor 1.8.1 or later.
+- Annoteca 1.20.0 or later (its plugin API version 5). Resolving and reopening from the map needs Annoteca 1.22.0 or later (API version 7).
+- Mind map editor 1.8.1 or later, tested through 1.9.0.
 
 If Annoteca is missing or too old, the plugin says so once and shows nothing on the map.
 
 ## Installation
 
-### BRAT (pre-release)
+### BRAT
 
 1. Install the **BRAT** plugin from Community Plugins.
 2. Open BRAT settings and click **Add Beta Plugin**.
@@ -55,7 +74,7 @@ If Annoteca is missing or too old, the plugin says so once and shows nothing on 
 
 ## Privacy
 
-The plugin makes no network requests and never writes to your notes itself. See [PRIVACY.md](./PRIVACY.md).
+The plugin makes no network requests and never writes to your notes itself: creating, resolving and reopening a comment all go through Annoteca, and only when you press the button. See [PRIVACY.md](./PRIVACY.md).
 
 ## Community
 

@@ -5,6 +5,7 @@
 import { installObsidianDomHelpers } from '../__mocks__/obsidian';
 import type { ApiComment, ApiFilter, AnnotecaApi } from '../annoteca-api';
 import { mindmapEditorAdapter } from '../adapters/mindmap-editor';
+import { defaultSettings } from '../settings';
 import type { AnnotecaStatus } from '../annoteca';
 import { MapDecorator } from '../map-decorator';
 import { commentAt, NOTE } from './fixtures';
@@ -48,6 +49,8 @@ function harness(
 	let status: AnnotecaStatus = { kind: 'ready', api };
 	const decorator = new MapDecorator(leaf, {
 		adapter: mindmapEditorAdapter,
+		settings: () => defaultSettings(),
+		clearFilter: () => undefined,
 		annoteca: () => status,
 		savedText: () => Promise.resolve(NOTE),
 		liveText: () => Promise.resolve(NOTE),
@@ -238,6 +241,8 @@ describe('MapDecorator', () => {
 			.mockImplementation(() => undefined);
 		const decorator = new MapDecorator(map.leaf, {
 			adapter: mindmapEditorAdapter,
+			settings: () => defaultSettings(),
+			clearFilter: () => undefined,
 			annoteca: () => {
 				asked += 1;
 				return { kind: 'missing' };
@@ -278,6 +283,8 @@ describe('MapDecorator', () => {
 		} as unknown as AnnotecaApi;
 		const decorator = new MapDecorator(map.leaf, {
 			adapter: mindmapEditorAdapter,
+			settings: () => defaultSettings(),
+			clearFilter: () => undefined,
 			annoteca: () => ({ kind: 'ready', api }),
 			savedText: () => Promise.resolve(NOTE),
 			liveText: () => Promise.resolve(NOTE),

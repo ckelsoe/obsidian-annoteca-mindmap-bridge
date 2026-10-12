@@ -5,7 +5,8 @@
 import type { App } from 'obsidian';
 import type { AnnotecaApi } from './annoteca-api';
 
-// apiVersion 5 adds compose(); everything else the bridge calls is older.
+// apiVersion 5 adds compose(); everything else the bridge needs is older.
+// resolve() and reopen() (7) are optional; see canResolve below.
 const MIN_API_VERSION = 5;
 
 export type AnnotecaStatus =
@@ -26,6 +27,21 @@ function isApi(value: unknown): value is AnnotecaApi {
 	const candidate = value as Record<string, unknown>;
 	if (typeof candidate.apiVersion !== 'number') return false;
 	return METHODS.every((name) => typeof candidate[name] === 'function');
+}
+
+// apiVersion 7 adds resolve() and reopen(). Optional: below it the badge menu
+// opens comments but offers no Resolve or Reopen.
+const RESOLVE_API_VERSION = 7;
+
+export function canResolve(api: AnnotecaApi): boolean {
+	// Feature-detected as well: the declared type says the methods are there,
+	// but an older Annoteca at runtime does not have them.
+	const methods = api as unknown as Record<string, unknown>;
+	return (
+		api.apiVersion >= RESOLVE_API_VERSION &&
+		typeof methods.resolve === 'function' &&
+		typeof methods.reopen === 'function'
+	);
 }
 
 export function annotecaStatus(app: App): AnnotecaStatus {

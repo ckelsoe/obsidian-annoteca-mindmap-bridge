@@ -1,4 +1,4 @@
-import { badgesFor } from '../badge-model';
+import { badgesFor, tintLevel } from '../badge-model';
 import { commentAt, NOTE } from './fixtures';
 import { at, defined } from './helpers/checked';
 
@@ -70,5 +70,18 @@ describe('badgesFor', () => {
 		expect(badge.open).toBe(1);
 		expect(badge.hidden).toBe(1);
 		expect(at(badge.comments, 0).drawn).toBe(false);
+	});
+});
+
+describe('tintLevel', () => {
+	it.each([
+		[0, 0],
+		[1, 1],
+		[2, 2],
+		[3, 2],
+		[4, 3],
+		[40, 3],
+	])('%i open comments tint at level %i', (open, level) => {
+		expect(tintLevel(open)).toBe(level);
 	});
 });

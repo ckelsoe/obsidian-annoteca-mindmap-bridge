@@ -13,10 +13,15 @@ export class MarkdownView {}
 // A menu item as the code under test builds it.
 export class MenuItem {
 	title = '';
+	icon = '';
 	disabled = false;
 	click: (() => void) | null = null;
 	setTitle(title: string): this {
 		this.title = title;
+		return this;
+	}
+	setIcon(icon: string): this {
+		this.icon = icon;
 		return this;
 	}
 	setDisabled(disabled: boolean): this {
@@ -38,6 +43,13 @@ export class Menu {
 	addItem(cb: (item: MenuItem) => unknown): this {
 		const item = new MenuItem();
 		cb(item);
+		this.items.push(item);
+		return this;
+	}
+	// Recorded as an item titled '---' so a test reads the menu in order.
+	addSeparator(): this {
+		const item = new MenuItem();
+		item.title = '---';
 		this.items.push(item);
 		return this;
 	}
@@ -198,6 +210,9 @@ export function installObsidianDomHelpers(win: Window = window): void {
 	};
 	element.addClass = function (this: Element, ...classes: string[]): void {
 		for (const c of classes) if (c !== '') this.classList.add(c);
+	};
+	element.removeClass = function (this: Element, ...classes: string[]): void {
+		for (const c of classes) if (c !== '') this.classList.remove(c);
 	};
 	element.toggleClass = function (
 		this: Element,

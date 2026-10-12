@@ -7,6 +7,7 @@ import type { App, WorkspaceLeaf } from 'obsidian';
 import { installObsidianDomHelpers, noticeLog } from '../__mocks__/obsidian';
 import type { AnnotecaApi } from '../annoteca-api';
 import { mindmapEditorAdapter } from '../adapters/mindmap-editor';
+import { defaultSettings } from '../settings';
 import { MapDecorator } from '../map-decorator';
 import { convertToEndOfFile, multiLineMarkers } from '../storage-guard';
 import { commentAt, INLINE, inlineComment, NOTE } from './fixtures';
@@ -55,6 +56,8 @@ async function showNote(
 	} as unknown as AnnotecaApi;
 	const decorator: MapDecorator = new MapDecorator(map.leaf, {
 		adapter: mindmapEditorAdapter,
+		settings: () => defaultSettings(),
+		clearFilter: () => undefined,
 		annoteca: () => ({ kind: 'ready', api }),
 		savedText: () => Promise.resolve(text),
 		liveText: () => Promise.resolve(text),
@@ -253,6 +256,8 @@ describe('a failing notice', () => {
 		} as unknown as AnnotecaApi;
 		const decorator = new MapDecorator(map.leaf, {
 			adapter: mindmapEditorAdapter,
+			settings: () => defaultSettings(),
+			clearFilter: () => undefined,
 			annoteca: () => ({ kind: 'ready', api }),
 			savedText: () => Promise.resolve(INLINE),
 			liveText: () => Promise.resolve(INLINE),
@@ -285,6 +290,8 @@ describe('after the note is converted', () => {
 		} as unknown as AnnotecaApi;
 		const decorator = new MapDecorator(map.leaf, {
 			adapter: mindmapEditorAdapter,
+			settings: () => defaultSettings(),
+			clearFilter: () => undefined,
 			annoteca: () => ({ kind: 'ready', api }),
 			savedText: () => Promise.resolve(text),
 			liveText: () => Promise.resolve(text),

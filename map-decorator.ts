@@ -11,10 +11,18 @@ import { badgesFor } from './badge-model';
 import type { NodeBadge } from './badge-model';
 import { clearNodeControls, drawNodeControls } from './badge-view';
 import type { NodeControlActions } from './badge-view';
+import { clearFilterNotice, drawFilterNotice } from './filter-notice';
+import { stepTo } from './nav';
 import { NodeActions } from './node-actions';
 import type { NodeTarget } from './node-actions';
+import { filterActive, filterSummary, showsComment } from './settings';
+import type { BridgeSettings } from './settings';
 import { multiLineMarkers } from './storage-guard';
 import { clearStorageNotice, drawStorageNotice } from './storage-notice';
+
+// How long a node the map would not select stays marked after a go-to.
+const FLASH_MS = 1200;
+const FLASH_CLASS = 'annoteca-mmb-flash';
 
 export interface DecoratorDeps {
 	readonly adapter: MapAdapter;
@@ -30,6 +38,10 @@ export interface DecoratorDeps {
 	storageNoticeDismissed(path: string): boolean;
 	dismissStorageNotice(path: string): void;
 	convertStorage(path: string): void;
+	// What the badges count and whether nodes are tinted, read at each draw.
+	settings(): BridgeSettings;
+	// The filter row's button: show every comment again.
+	clearFilter(): void;
 }
 
 interface Loaded {
@@ -50,6 +62,8 @@ export class MapDecorator {
 	// redraw.
 	private requested: string | null = null;
 	private disposed = false;
+	private flashing: { el: HTMLElement; win: Window; id: number } | null =
+		null;
 	private readonly actions: NodeActions;
 	private readonly controls: NodeControlActions;
 
@@ -64,7 +78,7 @@ export class MapDecorator {
 		this.controls = {
 			openBadge: (nodeEl, anchor) => {
 				const target = this.target(nodeEl);
-				if (target) void this.actions.open(target, anchor);
+				if (target) this.actions.open(target, anchor);
 			},
 			addComment: (nodeEl) => {
 				const target = this.target(nodeEl);
@@ -124,13 +138,21 @@ export class MapDecorator {
 	private drawNow(): void {
 		const canvas = this.deps.adapter.canvas(this.leaf);
 		this.watch(canvas);
-		// Separately guarded: a failure in the notice must not take the
+		// Separately guarded: a failure in a notice must not take the
 		// badges down with it.
 		try {
 			this.drawNotice();
 		} catch (err) {
 			console.error(
 				'Annoteca MindMap Bridge: could not draw the storage notice',
+				err,
+			);
+		}
+		try {
+			this.drawFilter();
+		} catch (err) {
+			console.error(
+				'Annoteca MindMap Bridge: could not draw the filter row',
 				err,
 			);
 		}
@@ -151,11 +173,81 @@ export class MapDecorator {
 			if (path && path !== this.requested) void this.refresh();
 			return;
 		}
+		const settings = this.deps.settings();
 		drawNodeControls(
 			read.nodes,
-			badgesFor(read.nodes, loaded.comments, loaded.text),
+			badgesFor(read.nodes, this.shown(loaded, settings), loaded.text),
 			this.controls,
+			{ tint: settings.tint },
 		);
+	}
+
+	// The loaded comments the badges count under the current filter.
+	private shown(
+		loaded: Loaded,
+		settings: BridgeSettings = this.deps.settings(),
+	): ApiComment[] {
+		return loaded.comments.filter((c) => showsComment(settings, c));
+	}
+
+	// The filter row depends on the settings and Annoteca's categories, not on
+	// the note, so it shows whenever a filter is on.
+	private drawFilter(): void {
+		const anchor = this.deps.adapter.noticeAnchor(this.leaf);
+		if (!anchor) return;
+		const settings = this.deps.settings();
+		// Annoteca is asked only when a filter is on: most draws need nothing.
+		const status = filterActive(settings) ? this.deps.annoteca() : null;
+		if (status?.kind !== 'ready') {
+			clearFilterNotice(anchor);
+			return;
+		}
+		const categories = status.api.categories().map((c) => c.id);
+		drawFilterNotice(anchor, filterSummary(settings, categories), () =>
+			this.deps.clearFilter(),
+		);
+	}
+
+	// Select the next or previous node with a badge, wrapping at the ends.
+	// False when no node on the map has one.
+	goTo(direction: 1 | -1): boolean {
+		if (this.disposed) return false;
+		const canvas = this.deps.adapter.canvas(this.leaf);
+		const path = this.deps.adapter.notePath(this.leaf);
+		const loaded = this.loaded;
+		if (!canvas || !path || loaded?.path !== path) return false;
+		const read = this.deps.adapter.readNodes(canvas);
+		if (read.kind === 'broken') return false;
+		const badges = badgesFor(read.nodes, this.shown(loaded), loaded.text);
+		const line = stepTo(
+			[...badges.keys()].map((node) => node.line),
+			this.deps.adapter.selectedLine(canvas),
+			direction,
+		);
+		const node = read.nodes.find((n) => n.line === line);
+		if (!node) return false;
+		// The map normally takes the selection. If it does not, the node is
+		// still scrolled into view, and a short mark shows where.
+		if (!this.deps.adapter.select(node)) this.flash(node.el);
+		return true;
+	}
+
+	private flash(el: HTMLElement): void {
+		this.stopFlash();
+		el.addClass(FLASH_CLASS);
+		const win = el.win;
+		this.flashing = {
+			el,
+			win,
+			id: win.setTimeout(() => this.stopFlash(), FLASH_MS),
+		};
+	}
+
+	private stopFlash(): void {
+		if (!this.flashing) return;
+		this.flashing.win.clearTimeout(this.flashing.id);
+		this.flashing.el.removeClass(FLASH_CLASS);
+		this.flashing = null;
 	}
 
 	// The storage notice depends only on the note, not on how the map is
@@ -198,7 +290,7 @@ export class MapDecorator {
 		const loaded = this.loaded;
 		let badge: NodeBadge | undefined;
 		if (loaded?.path === path)
-			badge = badgesFor(read.nodes, loaded.comments, loaded.text).get(
+			badge = badgesFor(read.nodes, this.shown(loaded), loaded.text).get(
 				node,
 			);
 		// Read at the press, not at the last draw: it is the text these node
@@ -210,12 +302,15 @@ export class MapDecorator {
 	dispose(): void {
 		this.disposed = true;
 		this.cancelFrame();
+		this.stopFlash();
 		this.observer?.disconnect();
 		this.observer = null;
 		const canvas = this.observed;
 		this.observed = null;
 		if (canvas) clearNodeControls(canvas);
-		clearStorageNotice(this.deps.adapter.noticeAnchor(this.leaf));
+		const anchor = this.deps.adapter.noticeAnchor(this.leaf);
+		clearStorageNotice(anchor);
+		clearFilterNotice(anchor);
 	}
 
 	// One observer per canvas. A redraw empties the canvas and appends new node

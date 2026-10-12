@@ -77,4 +77,39 @@ describe('Mind map editor adapter', () => {
 		const deferred = { ...map.leaf, isDeferred: true } as WorkspaceLeaf;
 		expect(adapter.renderedSource(deferred)).toBeNull();
 	});
+
+	it('reads which node is selected', () => {
+		const map = drawMap(document.body, 'a.md', [
+			{ line: -1, text: 'a' },
+			{ line: 2, text: 'Plan' },
+		]);
+		expect(adapter.selectedLine(map.canvas)).toBeNull();
+		map.nodeEl(2).addClass('is-selected');
+		expect(adapter.selectedLine(map.canvas)).toBe(2);
+	});
+
+	it("selects a node through the map's own click and scrolls it into view", () => {
+		const map = drawMap(document.body, 'a.md', [{ line: 2, text: 'Plan' }]);
+		const el = map.nodeEl(2);
+		const scrolled = jest.fn();
+		el.scrollIntoView = scrolled;
+		// Mind map editor's click listener, which selects the node.
+		el.addEventListener('click', () => el.addClass('is-selected'));
+		const read = adapter.readNodes(map.canvas);
+		if (read.kind !== 'nodes') throw new Error(read.reason);
+		expect(adapter.select(at(read.nodes, 0))).toBe(true);
+		expect(map.nodeEvents).toEqual(['2:click']);
+		expect(scrolled).toHaveBeenCalledWith({
+			block: 'center',
+			inline: 'center',
+		});
+	});
+
+	it('reports a click the map did not take', () => {
+		const map = drawMap(document.body, 'a.md', [{ line: 2, text: 'Plan' }]);
+		map.nodeEl(2).scrollIntoView = jest.fn();
+		const read = adapter.readNodes(map.canvas);
+		if (read.kind !== 'nodes') throw new Error(read.reason);
+		expect(adapter.select(at(read.nodes, 0))).toBe(false);
+	});
 });
