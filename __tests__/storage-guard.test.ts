@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
- * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button></div></body></html>"}
+ * @vitest-environment jsdom
+ * @vitest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button></div></body></html>"}
  */
 import { MarkdownView } from 'obsidian';
 import type { App, WorkspaceLeaf } from 'obsidian';
@@ -243,7 +243,7 @@ describe('convertToEndOfFile', () => {
 
 describe('a failing notice', () => {
 	it('still lets the badges draw', async () => {
-		const errors = jest
+		const errors = vi
 			.spyOn(console, 'error')
 			.mockImplementation(() => undefined);
 		const map = drawMap(document.body, 'notes/plan.md', [

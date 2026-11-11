@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
- * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><iframe></iframe></div></body></html>"}
+ * @vitest-environment jsdom
+ * @vitest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><iframe></iframe></div></body></html>"}
  */
 import { installObsidianDomHelpers } from '../__mocks__/obsidian';
 import type { ApiComment, ApiFilter, AnnotecaApi } from '../annoteca-api';
@@ -83,8 +83,7 @@ async function nextFrame(win: Window = window): Promise<void> {
 	});
 }
 
-// Counts observers built from one window's own constructor. A subclass, not
-// jest.spyOn: a spied class constructor cannot be called with `new`.
+// Counts observers built from one window's own constructor, by subclassing it.
 function countObservers(win: Window): { made(): number; restore(): void } {
 	const Original = win.MutationObserver;
 	let made = 0;
@@ -236,7 +235,7 @@ describe('MapDecorator', () => {
 	it('does not keep retrying while Annoteca is unavailable', async () => {
 		const map = drawMap(document.body, 'notes/plan.md', NODES);
 		let asked = 0;
-		const errors = jest
+		const errors = vi
 			.spyOn(console, 'error')
 			.mockImplementation(() => undefined);
 		const decorator = new MapDecorator(map.leaf, {
@@ -341,8 +340,8 @@ describe('MapDecorator', () => {
 		popoutObservers.restore();
 		mainObservers.restore();
 
-		const mainFrames = jest.spyOn(window, 'requestAnimationFrame');
-		const popoutFrames = jest.spyOn(popout, 'requestAnimationFrame');
+		const mainFrames = vi.spyOn(window, 'requestAnimationFrame');
+		const popoutFrames = vi.spyOn(popout, 'requestAnimationFrame');
 		map.redraw(NODES);
 		// The observer reports in a microtask and the decorator asks for a
 		// frame there, before this test asks for one of its own.

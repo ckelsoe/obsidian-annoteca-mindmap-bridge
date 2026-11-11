@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
- * @jest-environment-options {"html": "<html><body><div id=\"seeds\"><div></div><span></span></div></body></html>"}
+ * @vitest-environment jsdom
+ * @vitest-environment-options {"html": "<html><body><div id=\"seeds\"><div></div><span></span></div></body></html>"}
  */
 import type { WorkspaceLeaf } from 'obsidian';
 import { installObsidianDomHelpers } from '../__mocks__/obsidian';
@@ -91,7 +91,7 @@ describe('Mind map editor adapter', () => {
 	it("selects a node through the map's own click and scrolls it into view", () => {
 		const map = drawMap(document.body, 'a.md', [{ line: 2, text: 'Plan' }]);
 		const el = map.nodeEl(2);
-		const scrolled = jest.fn();
+		const scrolled = vi.fn();
 		el.scrollIntoView = scrolled;
 		// Mind map editor's click listener, which selects the node.
 		el.addEventListener('click', () => el.addClass('is-selected'));
@@ -107,7 +107,7 @@ describe('Mind map editor adapter', () => {
 
 	it('reports a click the map did not take', () => {
 		const map = drawMap(document.body, 'a.md', [{ line: 2, text: 'Plan' }]);
-		map.nodeEl(2).scrollIntoView = jest.fn();
+		map.nodeEl(2).scrollIntoView = vi.fn();
 		const read = adapter.readNodes(map.canvas);
 		if (read.kind !== 'nodes') throw new Error(read.reason);
 		expect(adapter.select(at(read.nodes, 0))).toBe(false);

@@ -1,4 +1,4 @@
-// Minimal stand-in for the `obsidian` module under Jest, which has no plugin
+// Minimal stand-in for the `obsidian` module under Vitest, which has no plugin
 // host. Production code type-checks against the real obsidian.d.ts, so this
 // file only has to provide the runtime values the code under test touches.
 // Test-only helpers are module-level exports reached through a relative

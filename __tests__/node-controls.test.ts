@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
- * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><iframe></iframe></div></body></html>"}
+ * @vitest-environment jsdom
+ * @vitest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><iframe></iframe></div></body></html>"}
  */
 // The node controls, driven the way a user drives them: real DOM clicks on
 // the badge, the menu and the "+" button, through the decorator that drew
