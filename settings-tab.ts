@@ -17,6 +17,9 @@ export interface SettingsStore {
 // invite expires after 7 days and would rot in a shipped release.
 const DISCORD_URL = 'https://discord.gg/gd6tKJDPj4';
 
+const CATEGORIES_DESC =
+	'Turn a category off to leave its comments off the map.';
+
 const REPO_URL = 'https://github.com/ckelsoe/obsidian-annoteca-mindmap-bridge';
 
 export class BridgeSettingTab extends PluginSettingTab {
@@ -46,7 +49,8 @@ export class BridgeSettingTab extends PluginSettingTab {
 					},
 					{
 						name: 'Categories',
-						searchable: false,
+						desc: CATEGORIES_DESC,
+						aliases: ['category', 'hide category', 'filter'],
 						render: (setting: Setting) => {
 							this.renderCategories(setting);
 						},
@@ -64,14 +68,16 @@ export class BridgeSettingTab extends PluginSettingTab {
 				items: [
 					{
 						name: 'Annoteca',
-						searchable: false,
+						desc: 'Whether Annoteca is installed, enabled and new enough.',
+						aliases: ['status', 'connection', 'api version'],
 						render: (setting: Setting) => {
 							setting.setDesc(this.annotecaStatus());
 						},
 					},
 					{
 						name: this.bridge.mapPluginName(),
-						searchable: false,
+						desc: 'Whether the mind map plugin is installed, and how many maps are open.',
+						aliases: ['status', 'connection', 'mind map', 'layout'],
 						render: (setting: Setting) => {
 							setting.setDesc(this.mapStatus());
 						},
@@ -106,9 +112,7 @@ export class BridgeSettingTab extends PluginSettingTab {
 	// has the full width. Annoteca's categories are only known at runtime.
 	private renderCategories(setting: Setting): void {
 		setting.settingEl.addClass('annoteca-mmb-stacked-setting');
-		setting.setDesc(
-			'Turn a category off to leave its comments off the map.',
-		);
+		setting.setDesc(CATEGORIES_DESC);
 		const list = setting.controlEl.createDiv({
 			cls: 'annoteca-mmb-category-list',
 		});
