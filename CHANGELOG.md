@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Settings search now finds the Categories list and the Annoteca and mind map status rows. Before, only the Show dropdown and the tint toggle turned up.
+
 ## [1.0.0] - 2026-10-12
 
 The first stable release. Act on comments from the map: resolve and reopen them, filter what the badges show, step from comment to comment, and tint nodes by open comments. Needs Annoteca 1.20.0 or later (1.22.0 or later to resolve from the map) and Mind map editor 1.8.1 or later.
