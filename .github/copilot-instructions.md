@@ -14,7 +14,7 @@ The bridge never writes to a note itself. It draws badges, opens comments throug
 ```bash
 npm run build   # tsc type-check + esbuild bundle
 npm run lint    # eslint (obsidianmd + typescript-eslint type-checked + curated sonarjs), prettier --check, submission pre-check, marketplace type-check
-npm test        # Jest
+npm test        # Vitest
 ```
 
 All three must pass. `npm run lint` must report zero warnings.

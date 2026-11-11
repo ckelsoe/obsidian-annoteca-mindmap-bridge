@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
- * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button></div></body></html>"}
+ * @vitest-environment jsdom
+ * @vitest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button></div></body></html>"}
  */
 import type { Plugin, WorkspaceLeaf } from 'obsidian';
 import {

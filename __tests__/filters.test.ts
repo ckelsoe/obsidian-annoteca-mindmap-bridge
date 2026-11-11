@@ -1,6 +1,6 @@
 /**
- * @jest-environment jsdom
- * @jest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button><iframe></iframe></div></body></html>"}
+ * @vitest-environment jsdom
+ * @vitest-environment-options {"pretendToBeVisual": true, "html": "<html><body><div id=\"seeds\"><div></div><span></span><button></button><iframe></iframe></div></body></html>"}
  */
 // Filters, tint, the filter row and go-to, through the decorator that draws
 // them on a map.
@@ -53,7 +53,7 @@ async function setup(
 ): Promise<Setup> {
 	const map = drawMap(document.body, 'notes/plan.md', NODES);
 	extra.markup?.(map);
-	for (const spec of NODES) map.nodeEl(spec.line).scrollIntoView = jest.fn();
+	for (const spec of NODES) map.nodeEl(spec.line).scrollIntoView = vi.fn();
 	const prefs = { current: { ...defaultSettings(), ...over } };
 	const cleared: number[] = [];
 	const api = {
@@ -304,15 +304,15 @@ describe('go to next/previous node with comments', () => {
 	});
 
 	it('marks the node for a moment when the map does not select it', async () => {
-		jest.useFakeTimers();
+		vi.useFakeTimers();
 		try {
 			const { map, decorator } = await setup();
 			decorator.goTo(1);
 			expect(map.nodeEl(0).hasClass('annoteca-mmb-flash')).toBe(true);
-			jest.advanceTimersByTime(1300);
+			vi.advanceTimersByTime(1300);
 			expect(map.nodeEl(0).hasClass('annoteca-mmb-flash')).toBe(false);
 		} finally {
-			jest.useRealTimers();
+			vi.useRealTimers();
 		}
 	});
 
