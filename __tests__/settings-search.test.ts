@@ -51,4 +51,11 @@ describe('settings search', () => {
 		for (const n of ['Categories', 'Annoteca', 'Mind map editor'])
 			expect(names).toContain(n);
 	});
+
+	it('finds both status rows by "connection"', () => {
+		for (const n of ['Annoteca', 'Mind map editor'])
+			expect(items.find((i) => i.name === n)?.aliases).toContain(
+				'connection',
+			);
+	});
 });
