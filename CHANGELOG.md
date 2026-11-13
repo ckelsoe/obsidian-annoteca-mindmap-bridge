@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-13
+
 ### Changed
 - Settings search now finds the Categories list and the Annoteca and mind map status rows. Before, only the Show dropdown and the tint toggle turned up.
 
