@@ -46,7 +46,8 @@ export function normalizeSettings(raw: unknown): BridgeSettings {
 		settings.hiddenCategories = [
 			...new Set(
 				data.hiddenCategories.filter(
-					(id): id is string => typeof id === 'string' && id !== '',
+					(id: unknown): id is string =>
+						typeof id === 'string' && id !== '',
 				),
 			),
 		];
